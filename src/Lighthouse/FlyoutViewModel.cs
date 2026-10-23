@@ -582,7 +582,7 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
     {
         "Accent" => "#7fb3c2",
         "Good" => "#8fb386",
-        "Web" => "#8fb3d9",
+        "Web" => "#e094bf",
         _ => null,
     };
 

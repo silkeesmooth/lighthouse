@@ -78,7 +78,7 @@ by default and costs about 0.2% of a 16-core CPU while shown.
     ChatGPT, Copilot;
   - **Jobs** (green): your own scripts and servers (below);
   - **Games** (amber): anything from a Steam, Epic, EA, Riot, GOG, Ubisoft or Xbox game folder;
-  - **Internet** (blue): web browsers: Chrome, Edge, Firefox, Brave, Opera, Vivaldi, Arc;
+  - **Internet** (plum): web browsers: Chrome, Edge, Firefox, Brave, Opera, Vivaldi, Arc;
   - **Apps and Windows** (empty ring): VS Code, Discord, Defender, Windows Update, and so on.
 
   A switch on the same line shows the list by **Load** (CPU, GPU, RAM, VRAM) or by **Disk & network** (CPU, disk

@@ -24,7 +24,7 @@ public static class Theme
         ["ButtonBg"] = ("#2e6171", "#2e6171"),
         ["ButtonFg"] = ("#fafcfa", "#edf3f5"),
         ["Series2"] = ("#b8962e", "#f1e38f"),
-        ["Web"] = ("#4f7cac", "#8fb3d9"),
+        ["Web"] = ("#a34d7d", "#e094bf"),
     };
 
     /// <summary>The flyout's Dark mode switch: true light, false dark, null follows Windows.</summary>

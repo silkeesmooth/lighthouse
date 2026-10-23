@@ -12,7 +12,7 @@ Newest first.
 - **More boats.** As well as watched jobs, any program working hard (about a core of CPU, 10% of the GPU, or
   5 Mbps of network) sails, for at least 30 seconds once it calms down, up to 6. Each sail is the program's dot
   colour in Using it now (`SceneBoats`, with tests). When tags run out of room the busiest keep theirs.
-- **An Internet group**: web browsers (Chrome, Edge, Firefox, Brave, Opera, Vivaldi, Arc) get their own blue dot.
+- **An Internet group**: web browsers (Chrome, Edge, Firefox, Brave, Opera, Vivaldi, Arc) get their own plum dot, apart from the AI teal.
 - **A closed card stays closed until Windows restarts.** Closing was remembered only while Lighthouse ran, and only
   until the card went away, so an update or a check that came back brought the same card back. The closed cards
   are saved with the time Windows started (`ClosedCards`, with tests).
