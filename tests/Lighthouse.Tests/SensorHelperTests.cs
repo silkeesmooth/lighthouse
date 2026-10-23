@@ -91,8 +91,9 @@ public class SensorPipeTests
         using var client = new SensorClient(null, name, helperTask: null, readLocally: false);
         await WaitFor(() => client.Sample().CpuTemp == 52);
         Assert.True(client.Connected);
-        Assert.False(client.Full); // the test helper isn't admin, and says so
-        Assert.Equal("the sensor helper isn't running as admin", client.Error);
+        // The helper says whether it is admin: a test run as admin (GitHub's runners) gets the full sensors.
+        Assert.Equal(Lighthouse.Core.Native.UserContext.Elevated, client.Full);
+        Assert.Equal(Lighthouse.Core.Native.UserContext.Elevated ? null : "the sensor helper isn't running as admin", client.Error);
         Assert.Equal([61.0, 48.0], client.Sample().CcdTemps);
         Assert.Equal(Environment.ProcessPath, client.Details([new(Environment.ProcessId, 1)])!.Single().Path);
         stop.Cancel();

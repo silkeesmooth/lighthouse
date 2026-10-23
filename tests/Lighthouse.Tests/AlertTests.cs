@@ -101,7 +101,8 @@ public class AlertEngineTests
     public void A_process_busy_for_15_minutes_while_you_are_away_is_a_runaway()
     {
         var engine = NewEngine();
-        var stuck = new WorkloadUsage("app:node", "node", WorkloadKind.App, 6.25, 0, 0.3, 0, 1); // two cores of 32
+        double twoCores = 2 * 100.0 / Environment.ProcessorCount; // CPU % is of the whole machine, whatever its size
+        var stuck = new WorkloadUsage("app:node", "node", WorkloadKind.App, twoCores, 0, 0.3, 0, 1);
         var away = new AlertContext(InGame: false, Paused: false, UserIdle: TimeSpan.FromMinutes(30));
         var fired = Run(engine, _ => new Snapshot { AllWorkloads = [stuck] }, 16 * 60, away);
         var runaway = Assert.Single(fired, n => n.Id.StartsWith("runaway:"));
