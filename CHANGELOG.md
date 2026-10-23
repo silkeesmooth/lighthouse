@@ -2,6 +2,16 @@
 
 Newest first.
 
+## 2026-10-23: the mini gets out of the way of fullscreen video
+
+- **During fullscreen video** (right-click on the mini, `miniFullscreen`): while a fullscreen window covers the
+  mini's screen, the mini moves to its favorite spot on another screen, or hides when there is only one. It comes
+  back to where it was when fullscreen ends. "Hide" always hides; "Stay on top" leaves it.
+- A window counts as fullscreen when it covers its whole monitor, taskbar too. A browser stays maximized under its
+  fullscreen video, with the title bar gone, so a maximized window counts only without a title bar. It checks four
+  times a second, and keeps counting a fullscreen video while you click on another screen. The rules are
+  `MiniFullscreen`, with tests.
+
 ## 2026-10-23: dark mode switch, a scene legend, more boats, cards that stay closed
 
 - **A Dark mode switch** at the bottom of the flyout. Lighthouse follows Windows' app theme until you flip it,

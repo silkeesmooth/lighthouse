@@ -95,6 +95,11 @@ public sealed record Settings
     public string MiniLayout { get; set; } = "full";
     /// <summary>The mini slides off text under it, and back to its favorite spot once that is clear.</summary>
     public bool MiniAvoidText { get; set; } = true;
+    /// <summary>
+    /// While a fullscreen video or game covers the mini's screen: "move" to another screen (or hide when there is
+    /// none), "hide", or "stay" on top. It comes back when fullscreen ends.
+    /// </summary>
+    public string MiniFullscreen { get; set; } = "move";
     /// <summary>Clicks go through the mini to what is behind it; switched from the tray menu.</summary>
     public bool MiniClickThrough { get; set; }
     public bool QuietInGames { get; init; } = true;

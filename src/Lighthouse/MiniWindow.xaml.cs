@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using Lighthouse.Controls;
 using Lighthouse.Core;
 using Lighthouse.Core.Rendering;
@@ -20,6 +21,7 @@ namespace Lighthouse;
 /// Each gauge's text is white or black for whatever is behind that gauge: once a second it captures the desktop
 /// behind itself (it is left out of captures) and picks by contrast. Drag to move (the spot is remembered),
 /// double-click for the full panel, right-click for the see-through level and hide. It never takes focus.
+/// It gets out of the way of fullscreen video (<see cref="MiniFullscreen"/> keeps the rules).
 /// </summary>
 public partial class MiniWindow : Window
 {
@@ -33,6 +35,9 @@ public partial class MiniWindow : Window
     private bool _sampleFailureLogged;
     private readonly MiniPlacement _placement = new();
     private bool _dragging, _sliding;
+    private readonly MiniFullscreen _fullscreen = new();
+    private readonly FullscreenWatch _watch = new();
+    private readonly DispatcherTimer _fullscreenTimer = new() { Interval = TimeSpan.FromMilliseconds(250) };
 
     public MiniWindow(FlyoutViewModel vm, MonitorEngine engine, Action openFlyout, Action hide)
     {
@@ -53,6 +58,13 @@ public partial class MiniWindow : Window
             item.Click += (sender, _) => SetLayout((string)((MenuItem)sender).Tag);
         foreach (var item in FavoriteItems)
             item.Click += (sender, _) => SetFavorite((string)((MenuItem)sender).Tag);
+        foreach (var item in FullscreenItems)
+            item.Click += (sender, _) =>
+            {
+                _engine.Settings.MiniFullscreen = (string)((MenuItem)sender).Tag;
+                _engine.SaveSettings();
+            };
+        _fullscreenTimer.Tick += (_, _) => CheckFullscreen();
         AvoidTextItem.Click += (_, _) =>
         {
             _engine.Settings.MiniAvoidText = !_engine.Settings.MiniAvoidText;
@@ -63,6 +75,7 @@ public partial class MiniWindow : Window
             MarkSeeThrough();
             foreach (var item in LayoutItems) item.IsChecked = (string)item.Tag == _engine.Settings.MiniLayout;
             foreach (var item in FavoriteItems) item.IsChecked = (string)item.Tag == _engine.Settings.MiniFavorite;
+            foreach (var item in FullscreenItems) item.IsChecked = (string)item.Tag == _engine.Settings.MiniFullscreen;
             AvoidTextItem.IsChecked = _engine.Settings.MiniAvoidText;
             AvoidTextItem.IsEnabled = _excluded; // it reads what is behind it, which needs it left out of captures
         };
@@ -85,6 +98,7 @@ public partial class MiniWindow : Window
                 _dragging = false;
             }
             SnapToEdges();
+            _fullscreen.Dragged(); // dropped somewhere while away for fullscreen: it stays there
             _placement.Dragged(DateTime.Now); // for now: it goes back to its favorite spot once that is clear
             SampleBackdrop();
         };
@@ -93,6 +107,7 @@ public partial class MiniWindow : Window
     private IEnumerable<MenuItem> SeeThroughItems => [SolidItem, LightItem, MediumItem, StrongItem];
     private IEnumerable<MenuItem> LayoutItems => [FullLayout, StripLayout, SceneLayout, NumbersLayout];
     private IEnumerable<MenuItem> FavoriteItems => FavoriteMenu.Items.OfType<MenuItem>();
+    private IEnumerable<MenuItem> FullscreenItems => FullscreenMenu.Items.OfType<MenuItem>();
 
     /// <summary>Called once a second with fresh numbers; the text colours and its place are re-checked at the same time.</summary>
     public void UpdateScene(SceneState scene)
@@ -194,7 +209,7 @@ public partial class MiniWindow : Window
     /// </summary>
     private void CheckPlacement()
     {
-        if (!_engine.Settings.MiniAvoidText || !_excluded || !IsVisible || IsMouseOver || _dragging || _sliding) return;
+        if (!_engine.Settings.MiniAvoidText || !_excluded || !IsVisible || IsMouseOver || _dragging || _sliding || _fullscreen.IsAway) return;
         try
         {
             var dpi = VisualTreeHelper.GetDpi(this);
@@ -304,6 +319,66 @@ public partial class MiniWindow : Window
 
     [DllImport("user32.dll")]
     private static extern bool ClientToScreen(IntPtr hwnd, ref POINT point);
+
+    // --- fullscreen video -------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Four times a second while the mini is on: moves it to another screen, or hides it, while a fullscreen window
+    /// covers its screen, and puts it back when fullscreen ends.
+    /// </summary>
+    private void CheckFullscreen()
+    {
+        if (!_engine.Settings.MiniMonitor)
+        {
+            _fullscreenTimer.Stop();
+            _fullscreen.Reset();
+            return;
+        }
+        if (_dragging || _sliding) return;
+        var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+        if (hwnd == IntPtr.Zero || !GetWindowRect(hwnd, out var r)) return;
+        var me = D.Rectangle.FromLTRB(r.Left, r.Top, r.Right, r.Bottom);
+        var screens = Forms.Screen.AllScreens.Select(s => new ScreenArea(s.Bounds, s.WorkingArea, s.Primary)).ToList();
+        var step = _fullscreen.Check(_watch.Check(), me, screens, _engine.Settings.MiniFullscreen, _engine.Settings.MiniFavorite);
+        switch (step.Kind)
+        {
+            case FullscreenStepKind.Hide:
+                Log.Write("mini hidden: a fullscreen window covers its screen");
+                Hide();
+                break;
+            case FullscreenStepKind.Show:
+                Log.Write("mini shown again: fullscreen ended");
+                Show();
+                SampleBackdrop();
+                break;
+            case FullscreenStepKind.MoveTo:
+                Log.Write(_fullscreen.IsAway ? "mini moved to another screen: a fullscreen window covers its screen" : "mini moved back: fullscreen ended");
+                MovePixels(hwnd, step.X, step.Y);
+                SampleBackdrop();
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Moves to a spot in screen pixels. Another screen can have another scale, which resizes the mini as it
+    /// arrives, so it is then kept inside that screen's work area.
+    /// </summary>
+    private static void MovePixels(IntPtr hwnd, int x, int y)
+    {
+        const uint SWP_NOSIZE = 0x1, SWP_NOZORDER = 0x4, SWP_NOACTIVATE = 0x10;
+        SetWindowPos(hwnd, IntPtr.Zero, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+        if (!GetWindowRect(hwnd, out var r)) return;
+        var area = Forms.Screen.FromPoint(new D.Point(x, y)).WorkingArea;
+        int w = r.Right - r.Left, h = r.Bottom - r.Top;
+        int nx = Math.Max(area.Left, Math.Min(r.Left, area.Right - w)), ny = Math.Max(area.Top, Math.Min(r.Top, area.Bottom - h));
+        if (nx != r.Left || ny != r.Top) SetWindowPos(hwnd, IntPtr.Zero, nx, ny, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+    }
+
+    [DllImport("user32.dll")]
+    private static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
 
     // --- text colour from what is behind ---------------------------------------------------------------
 
@@ -460,6 +535,8 @@ public partial class MiniWindow : Window
         Top = y / dpi.DpiScaleY;
         UpdateLayout();
         SampleBackdrop();
+        _fullscreen.Reset();
+        _fullscreenTimer.Start();
     }
 
     /// <summary>

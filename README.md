@@ -61,6 +61,10 @@ by default and costs about 0.2% of a 16-core CPU while shown.
   most once every 10 seconds (a drag counts as a move), never while the mouse is over it, and only to a spot that
   is clearly calmer and doesn't mostly cover where it is or its favorite spot. "Text" is judged from the sharp
   light-to-dark edges in what is behind it, so a plain or blurred wallpaper never moves it.
+- **During fullscreen video** (right-click > During fullscreen video): while a fullscreen video, game or slideshow
+  covers the mini's screen, it moves to the same favorite spot on another screen, or hides when there is no other
+  screen. It comes back when fullscreen ends. "Hide" always hides; "Stay on top" leaves it. A browser's fullscreen
+  video counts, YouTube in Chrome or Edge included.
 - **Clicks go through the mini monitor** (tray menu): clicks reach the window behind it. It's in the tray menu
   because the mini can't be right-clicked while it's on.
 
@@ -202,6 +206,7 @@ shows the list settings (`jobs`, `workloadNames`, `autostartOff`):
 | `miniBackgroundOpacity` | How solid the mini monitor's panel is (0 to 1). |
 | `miniLayout` | `full`, `strip`, `lighthouse` or `numbers`; the mini's Layout menu sets it. |
 | `miniAvoidText` | The mini moves off text (default true). |
+| `miniFullscreen` | During fullscreen video: `move` to another screen, or hide without one (default), `hide`, or `stay`. |
 | `miniClickThrough` | Clicks go through the mini (default false). |
 | `miniFavorite` | Where the mini opens and goes back to: `bottom-right` (default), `bottom`, `bottom-left`, `left`, `top-left`, `top`, `top-right`, `right`, or `custom` for `miniLeft` and `miniTop`. The Favorite spot menu sets it. |
 | `dismissedHealth` | Health checks you dismissed. Remove an id to bring it back. |

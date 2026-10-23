@@ -35,6 +35,11 @@
                 <MenuItem Header="Where it is now" Tag="custom" IsCheckable="True" />
             </MenuItem>
             <MenuItem x:Name="AvoidTextItem" Header="Move away from text" IsCheckable="True" />
+            <MenuItem x:Name="FullscreenMenu" Header="During fullscreen video">
+                <MenuItem Header="Move to another screen, or hide" Tag="move" IsCheckable="True" />
+                <MenuItem Header="Hide" Tag="hide" IsCheckable="True" />
+                <MenuItem Header="Stay on top" Tag="stay" IsCheckable="True" />
+            </MenuItem>
             <Separator />
             <MenuItem x:Name="HideItem" Header="Hide mini monitor" />
         </ContextMenu>
