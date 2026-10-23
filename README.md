@@ -1,6 +1,6 @@
 # Lighthouse
 
-<p align="center"><img src="docs/images/scene.gif" width="394" alt="The flyout's harbour scene at dusk: the beam turns, a backup job sails past as a boat, a game is a ship, gulls fly in with a download"></p>
+<p align="center"><img src="docs/images/scene.png" width="394" alt="The flyout's harbour scene at dusk: the beam turns, a backup job sails past as a boat, a game is a ship, gulls fly in with a download"></p>
 
 A CPU and GPU monitor for the Windows 11 taskbar. It shows as two live bars (CPU left, GPU right) that fill with
 load and turn from Payne's gray to amber to red as each chip heats up. Click it for the flyout, right-click
@@ -24,15 +24,17 @@ machine right now. Cards under that (alerts, job runs, health checks, results) e
 have a × that hides them until they go away and come back.
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/flyout-dark.png">
-    <img src="docs/images/flyout-light.png" width="400" alt="The flyout: the scene, the headline, four gauges, what is using the PC by load, and a watched job's card with its usual time">
-  </picture>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/flyout-io-dark.png">
-    <img src="docs/images/flyout-io-light.png" width="400" alt="The Disk &amp; network view: each program's disk, download and upload, and a speed test result against the internet plan">
-  </picture>
+  <img src="docs/images/flyout-light.png" width="400" align="top" alt="The flyout: the scene, the headline, four gauges, what is using the PC by load, a watched job's card with its usual time, and a speed test result">
+  <img src="docs/images/flyout-io-light.png" width="400" align="top" alt="The Disk &amp; network view: each program's disk, download and upload, with the same cards">
 </p>
+
+<details>
+<summary><b>Dark mode</b> (Lighthouse follows Windows' app theme)</summary>
+<p align="center">
+  <img src="docs/images/flyout-dark.png" width="400" align="top" alt="The flyout in dark mode">
+  <img src="docs/images/flyout-io-dark.png" width="400" align="top" alt="The Disk &amp; network view in dark mode">
+</p>
+</details>
 
 <p align="center"><img src="docs/images/scenes.png" width="820" alt="Four scenes: two watched jobs as boats, a game as a ship with the local LLM as the moon, a storm for a warning, and a speed test as light crossing the sea"></p>
 

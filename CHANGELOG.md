@@ -2,6 +2,16 @@
 
 Newest first.
 
+## 2026-10-23: tidier README pictures
+
+- The animated scene is an animated PNG (`Apng`, with tests) instead of a GIF: full colour, so the dusk sky has no
+  bands, and see-through rounded corners that suit GitHub's light and dark pages. It is smaller too (1.3 MB, was
+  2 MB).
+- The two flyout pictures carry the same cards, so they are the same height, and sit top-aligned side by side.
+- The four-scene picture has a see-through background and captions in a grey that reads on both pages.
+- Light pictures by default, and a **Dark mode** section that opens to the same two in dark. A README can't offer
+  a real switch, and following the reader's GitHub theme gave no way to see the other one.
+
 ## 2026-10-23: History moves into the flyout
 
 - **History is a page of the flyout** (a drill-through), opened by the History button, the tray menu's History,

@@ -46,12 +46,13 @@ internal static class ReadmeImages
         {
             Theme.Apply(light);
             string theme = light ? "light" : "dark";
+            // The same cards in both views, so the two pictures are the same height side by side.
+            vm.ShowSpeedResult(new SpeedResult(14, 486, 47, 690_000_000, new ConnectionInfo("Ethernet", "Realtek PCIe 2.5GbE Family Controller", 2500)));
             vm.ShowView(io: false);
             vm.Update(demo);
             ShowScene(flyout.Scene, vm.Scene, Evening, 2.5);
             Settle();
             ImageExport.Write(ImageExport.Render(flyout, flyout.Width, solidBackground: true, Sharp), Path.Combine(dir, $"flyout-{theme}.png"));
-            vm.ShowSpeedResult(new SpeedResult(14, 486, 47, 690_000_000, new ConnectionInfo("Ethernet", "Realtek PCIe 2.5GbE Family Controller", 2500)));
             vm.ShowView(io: true);
             vm.Update(demo);
             Settle();
@@ -67,7 +68,7 @@ internal static class ReadmeImages
         Settle(); // the gauges are list items, built on a later pass
         MiniLayouts(mini, engine, Path.Combine(dir, "mini-layouts.png"));
         Scenes(Path.Combine(dir, "scenes.png"));
-        AnimatedScene(Path.Combine(dir, "scene.gif"));
+        AnimatedScene(Path.Combine(dir, "scene.png"));
     }
 
     /// <summary>
@@ -176,11 +177,15 @@ internal static class ReadmeImages
             new SceneSignal(SignalPhase.Download, 486, "↓ 486 Mbps"))),
     ];
 
-    /// <summary>Four situations in a 2 × 2 grid with a caption under each.</summary>
+    /// <summary>
+    /// Four situations in a 2 × 2 grid with a caption under each, on a see-through background with captions in a
+    /// grey that reads on both GitHub's light and dark pages.
+    /// </summary>
     private static void Scenes(string path)
     {
-        var grid = new UniformGrid { Columns = 2, Background = Theme.Brush("Bg") };
-        foreach (var (caption, hour, seconds, state) in Situations)
+        var caption = new SolidColorBrush(Color.FromRgb(0x76, 0x7F, 0x8A));
+        var grid = new UniformGrid { Columns = 2, Background = Brushes.Transparent };
+        foreach (var (text, hour, seconds, state) in Situations)
         {
             var scene = new HarbourScene { Height = 150 };
             ShowScene(scene, state, DateTime.Today.AddHours(hour), seconds);
@@ -192,7 +197,7 @@ internal static class ReadmeImages
                     scene,
                     new TextBlock
                     {
-                        Text = caption, Margin = new Thickness(2, 6, 0, 0), FontSize = 12, Foreground = Theme.Brush("Muted"),
+                        Text = text, Margin = new Thickness(2, 6, 0, 0), FontSize = 12, Foreground = caption,
                         FontFamily = (FontFamily)Application.Current.FindResource("UiFont"),
                     },
                 },
@@ -209,7 +214,8 @@ internal static class ReadmeImages
 
     /// <summary>
     /// Four seconds of an evening at 12 frames a second: a game, a job, gulls flying in with a download and
-    /// foam from the disk. One palette for every frame, so colours don't flicker between them.
+    /// foam from the disk. An animated PNG, not a GIF: full colour, so the dusk sky has no bands, and see-through
+    /// rounded corners that suit GitHub's light and dark pages alike.
     /// </summary>
     private static void AnimatedScene(string path)
     {
@@ -219,8 +225,7 @@ internal static class ReadmeImages
         scene.Update(new SceneState(55, Heat.Warm, 70, 0.55, [new("a", "backup", 10)], "Cyberpunk 2077",
             Moon: true, MoonThinking: false, NetDownMbps: 280, DiskActivity: 0.6));
         scene.Step(2);
-        var encoder = new GifBitmapEncoder();
-        BitmapPalette? palette = null;
+        var pngs = new List<byte[]>();
         for (int i = 0; i < frames; i++)
         {
             scene.Step(1.0 / fps);
@@ -230,12 +235,13 @@ internal static class ReadmeImages
             scene.UpdateLayout();
             var frame = new RenderTargetBitmap((int)(w * ppi / 96), (int)(h * ppi / 96), ppi, ppi, PixelFormats.Pbgra32);
             frame.Render(scene);
-            palette ??= new BitmapPalette(frame, 256);
-            encoder.Frames.Add(BitmapFrame.Create(new FormatConvertedBitmap(frame, PixelFormats.Indexed8, palette, 0)));
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(frame));
+            using var buffer = new MemoryStream();
+            encoder.Save(buffer);
+            pngs.Add(buffer.ToArray());
         }
-        using var buffer = new MemoryStream();
-        encoder.Save(buffer);
-        File.WriteAllBytes(path, GifLoop.Make(buffer.ToArray(), 100 / fps));
+        File.WriteAllBytes(path, Apng.Make(pngs, 1, fps));
     }
 
     /// <summary>Lets WPF finish what a binding change queued (new list items are built on a later pass).</summary>
