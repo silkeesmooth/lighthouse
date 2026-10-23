@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Lighthouse.Core/Lighthouse.Core.csproj" />
+    <Project Path="src/Lighthouse/Lighthouse.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Lighthouse.Tests/Lighthouse.Tests.csproj" />
+  </Folder>
+</Solution>

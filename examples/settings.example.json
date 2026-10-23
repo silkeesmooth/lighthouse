@@ -1,0 +1,41 @@
+{
+  // Copy what you need into %LOCALAPPDATA%\Lighthouse\settings.json, or load this whole file with
+  // `Lighthouse.exe --import settings.example.json`. Each setting named here replaces that setting; the rest stay.
+
+  // Your own names for programs: a process whose file name or path contains "match" gets "label".
+  "workloadNames": [
+    { "match": "\\Tools\\ffmpeg\\", "label": "Video encoding" }
+  ],
+
+  // Scripts and servers to watch: a row per run, a boat in the scene, and a toast when it ends.
+  "jobs": [
+    {
+      "name": "Nightly import",
+      "match": "-m\\s+etl\\b",
+      "process": "python",
+      "exitCodes": {
+        "2": "got bad arguments (exit 2)",
+        "3": "could not reach the source (exit 3)"
+      }
+    },
+    {
+      "name": "Training",
+      "match": "train\\.py",
+      "process": "python"
+    },
+    {
+      "name": "Dev server",
+      "match": "uvicorn",
+      "label": "port[\\s=]+(?<label>\\d+)",
+      "notify": false
+    }
+  ],
+
+  // Startup entries to keep switched off (tools\autostart.ps1 -Disable switches them off and records how they were).
+  "autostartOff": [
+    { "kind": "task", "path": "\\", "name": "VendorUpdate", "why": "a vendor's updater at logon" },
+    { "kind": "run", "hive": "HKLM", "name": "Contoso RGB", "why": "an RGB app at logon" },
+    { "kind": "toast", "name": "Contoso.Updater", "why": "an updater's pop-ups" },
+    { "kind": "cmdpal", "name": "SampleWidget", "why": "a Command Palette widget" }
+  ]
+}

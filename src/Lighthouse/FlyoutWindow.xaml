@@ -1,0 +1,348 @@
+<Window x:Class="Lighthouse.FlyoutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="clr-namespace:Lighthouse.Controls"
+        Title="Lighthouse" Width="430" SizeToContent="Height"
+        WindowStyle="None" ResizeMode="NoResize" ShowInTaskbar="False" Topmost="True"
+        Background="{DynamicResource Bg}" Foreground="{DynamicResource Ink}"
+        FontFamily="{StaticResource UiFont}" FontSize="12"
+        UseLayoutRounding="True" SnapsToDevicePixels="True" BorderThickness="0">
+    <Border Padding="18,16,18,14" BorderBrush="{DynamicResource Line}" BorderThickness="1">
+        <StackPanel>
+            <!-- No text in this panel is cut off: anything that might not fit wraps. Renders check it (TextFit). -->
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Left" Text="LIGHTHOUSE" FontWeight="Bold" FontSize="11" Foreground="{DynamicResource Accent}" Margin="0,0,12,0" />
+                <TextBlock Text="{Binding MachineLine}" TextAlignment="Right" TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource Muted}" />
+            </DockPanel>
+            <StackPanel Visibility="{Binding MainVisibility}">
+            <c:HarbourScene x:Name="Scene" Height="150" Margin="0,10,0,0" />
+            <TextBlock Text="{Binding Headline}" FontFamily="{StaticResource DisplayFont}" FontSize="17" FontWeight="SemiBold"
+                       TextWrapping="Wrap" Margin="0,10,0,2" />
+            <TextBlock Text="{Binding Subline}" FontSize="11" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" />
+
+            <ItemsControl ItemsSource="{Binding Tiles}" Margin="-4,12,-4,0">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="2" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <!-- Click a gauge for its history: the History page, on that gauge's last hour. -->
+                        <Border Background="{DynamicResource Surface}" CornerRadius="12" Padding="8,9,12,9" Margin="4" Cursor="Hand"
+                                ToolTip="Show its history">
+                            <Border.InputBindings>
+                                <MouseBinding Gesture="LeftClick" Command="{Binding Open}" />
+                            </Border.InputBindings>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="62" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <c:Gauge Width="62" Height="62" VerticalAlignment="Center" Value="{Binding Fraction}" Text="{Binding GaugeText}"
+                                         Stroke="{Binding Accent}" Track="{DynamicResource Line}" Foreground="{DynamicResource Ink}" />
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Label}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" />
+                                    <TextBlock Text="{Binding Main}" FontFamily="{StaticResource DisplayFont}" FontSize="17" FontWeight="SemiBold"
+                                               Foreground="{Binding Accent}" />
+                                    <TextBlock Text="{Binding Detail}" FontSize="10.5" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" />
+                                    <c:Sparkline Height="16" Margin="0,5,0,0" Values="{Binding Spark}" Maximum="{Binding SparkMax}" Stroke="{Binding Accent}" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- "Using it now" by load, or by disk and network: a two-way switch on the title line. -->
+            <DockPanel Margin="0,14,0,2">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <RadioButton Content="Load" IsChecked="{Binding LoadView, Mode=TwoWay}" Style="{StaticResource Segment}" GroupName="using" />
+                    <RadioButton Content="Disk &amp; network" IsChecked="{Binding IoView, Mode=TwoWay}" Style="{StaticResource Segment}" GroupName="using" />
+                </StackPanel>
+                <TextBlock Text="Using it now" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </DockPanel>
+            <Grid Margin="0,0,0,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="54" />
+                    <ColumnDefinition Width="44" />
+                    <ColumnDefinition Width="50" />
+                    <ColumnDefinition Width="46" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="1" Text="CPU" TextAlignment="Right" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Bottom" />
+                <TextBlock Grid.Column="2" Text="{Binding Head2}" TextAlignment="Right" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Bottom" />
+                <TextBlock Grid.Column="3" Text="{Binding Head3}" TextAlignment="Right" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Bottom" />
+                <TextBlock Grid.Column="4" Text="{Binding Head4}" TextAlignment="Right" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Bottom" />
+            </Grid>
+            <ItemsControl ItemsSource="{Binding Rows}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,2" ToolTip="{Binding Tip}" Background="Transparent">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="54" />
+                                <ColumnDefinition Width="44" />
+                                <ColumnDefinition Width="50" />
+                                <ColumnDefinition Width="46" />
+                            </Grid.ColumnDefinitions>
+                            <DockPanel Margin="0,0,6,0">
+                                <Ellipse DockPanel.Dock="Left" Width="7" Height="7" Fill="{Binding Badge}" Stroke="{Binding Ring}" StrokeThickness="1.2"
+                                         Margin="0,5,7,0" VerticalAlignment="Top" />
+                                <TextBlock Text="{Binding Label}" FontWeight="{Binding Weight}" TextWrapping="Wrap" />
+                            </DockPanel>
+                            <TextBlock Grid.Column="1" Text="{Binding Cpu}" TextAlignment="Right" FontWeight="{Binding Weight}" />
+                            <TextBlock Grid.Column="2" Text="{Binding Col2}" TextAlignment="Right" FontWeight="{Binding Weight}" />
+                            <TextBlock Grid.Column="3" Text="{Binding Col3}" TextAlignment="Right" FontWeight="{Binding Weight}" />
+                            <TextBlock Grid.Column="4" Text="{Binding Col4}" TextAlignment="Right" FontWeight="{Binding Weight}" />
+                            <!-- Under the mouse only, over the end of the label, so the columns never move. -->
+                            <Button Content="Explain" Command="{Binding Explain}" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                    Background="{DynamicResource Bg}" Padding="8,0,6,0" ToolTip="Ask the local LLM about this">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource Link}">
+                                        <Setter Property="Visibility" Value="Hidden" />
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Grid}}" Value="True" />
+                                                    <Condition Binding="{Binding CanExplain}" Value="True" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Text="{Binding IoNote}" Visibility="{Binding IoNoteVisibility}" FontSize="11" Foreground="{DynamicResource Muted}"
+                       TextWrapping="Wrap" Margin="0,4,0,0" />
+
+            <!-- What the dots mean. Same order as the rows tend to come: what you started, then everything else. -->
+            <WrapPanel Margin="0,6,0,0" TextElement.FontSize="11" TextElement.Foreground="{DynamicResource Muted}">
+                <StackPanel Orientation="Horizontal" Margin="0,0,14,2" Background="Transparent"
+                            ToolTip="Claude, Claude Code, a local LLM, Codex, ChatGPT, Copilot">
+                    <Ellipse Width="7" Height="7" Fill="{DynamicResource Accent}" Margin="0,0,5,0" VerticalAlignment="Center" />
+                    <TextBlock Text="AI" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,14,2" Background="Transparent"
+                            ToolTip="Scripts and servers you asked Lighthouse to watch (jobs in settings.json)">
+                    <Ellipse Width="7" Height="7" Fill="{DynamicResource Good}" Margin="0,0,5,0" VerticalAlignment="Center" />
+                    <TextBlock Text="Jobs" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,14,2" Background="Transparent"
+                            ToolTip="Anything running from a Steam, Epic, EA, Riot, GOG, Ubisoft or Xbox games folder">
+                    <Ellipse Width="7" Height="7" Fill="{DynamicResource Warn}" Margin="0,0,5,0" VerticalAlignment="Center" />
+                    <TextBlock Text="Games" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,2" Background="Transparent"
+                            ToolTip="Everything else: browsers, editors, Windows itself">
+                    <Ellipse Width="7" Height="7" Stroke="{DynamicResource Muted}" StrokeThickness="1.2" Margin="0,0,5,0" VerticalAlignment="Center" />
+                    <TextBlock Text="Apps and Windows" />
+                </StackPanel>
+            </WrapPanel>
+
+            <ItemsControl ItemsSource="{Binding Cards}" Margin="0,10,0,0">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="{DynamicResource Surface}" CornerRadius="10" Margin="0,4,0,0" Padding="0">
+                            <DockPanel>
+                                <Border DockPanel.Dock="Left" Width="4" CornerRadius="10,0,0,10" Background="{Binding Tone}" />
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Close}" Command="{Binding Close}"
+                                        VerticalAlignment="Top" Margin="0,6,6,0" />
+                                <StackPanel Margin="12,9,2,10">
+                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding Body}" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,2,0,0" />
+                                    <WrapPanel Visibility="{Binding FooterVisibility}" Margin="0,8,0,0">
+                                        <Button Content="{Binding ActionText}" Command="{Binding Action}" Visibility="{Binding ActionVisibility}"
+                                                Style="{StaticResource Action}" Margin="0,0,12,0" />
+                                        <Button Content="Explain" Command="{Binding Explain}" Visibility="{Binding ExplainVisibility}"
+                                                Style="{StaticResource Link}" VerticalAlignment="Center" ToolTip="Ask the local LLM about this" />
+                                    </WrapPanel>
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Explain: each question and the local LLM's answer, then a box for a follow-up. -->
+            <Border Background="{DynamicResource Surface}" CornerRadius="10" Padding="12,9,6,10" Margin="0,8,0,0"
+                    Visibility="{Binding ExplainVisibility}">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Close}" Command="{Binding ExplainCloseCommand}"
+                            VerticalAlignment="Top" Margin="6,-3,0,0" />
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding ExplainTurns}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="0,0,0,8">
+                                        <TextBlock Text="{Binding Question}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding AnswerShown}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <DockPanel Visibility="{Binding FollowUpVisibility}">
+                            <Button DockPanel.Dock="Right" Content="Ask" Command="{Binding AskFollowUpCommand}" Style="{StaticResource Action}"
+                                    Padding="12,4" Margin="6,0,0,0" />
+                            <Grid>
+                                <TextBox Text="{Binding FollowUp, UpdateSourceTrigger=PropertyChanged}" FontSize="12" Padding="5,4"
+                                         Background="{DynamicResource Bg}" Foreground="{DynamicResource Ink}" CaretBrush="{DynamicResource Ink}"
+                                         BorderBrush="{DynamicResource Line}" BorderThickness="1" VerticalContentAlignment="Center">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding AskFollowUpCommand}" />
+                                    </TextBox.InputBindings>
+                                </TextBox>
+                                <TextBlock Text="Ask a follow-up" IsHitTestVisible="False" Foreground="{DynamicResource Muted}"
+                                           Margin="8,0,0,0" VerticalAlignment="Center" Visibility="{Binding FollowUpHintVisibility}" />
+                            </Grid>
+                        </DockPanel>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <!-- The speed test: three big numbers (the one being measured in the accent colour), a bar while it
+                 runs, then the line it went over. The scene shows the same test as light crossing the sea. -->
+            <Border Background="{DynamicResource Surface}" CornerRadius="10" Padding="12,8,6,10" Margin="0,8,0,0"
+                    Visibility="{Binding SpeedVisibility}">
+                <StackPanel>
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource Close}" Command="{Binding SpeedCloseCommand}"
+                                ToolTip="{Binding SpeedCloseTip}" VerticalAlignment="Top" />
+                        <TextBlock Text="{Binding Speed.Status}" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <ItemsControl ItemsSource="{Binding Speed.Stats}" Margin="0,4,6,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="3" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock TextWrapping="Wrap">
+                                        <Run Text="{Binding Value, Mode=OneWay}" FontFamily="{StaticResource DisplayFont}" FontSize="24"
+                                             FontWeight="SemiBold" Foreground="{Binding Ink, Mode=OneWay}" />
+                                        <Run Text="{Binding Unit, Mode=OneWay}" FontSize="11" Foreground="{DynamicResource Muted}" />
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding Label}" FontSize="11" Foreground="{DynamicResource Muted}" Margin="0,-2,0,0" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Grid Height="3" Margin="0,9,6,1" Visibility="{Binding Speed.ProgressVisibility}">
+                        <Border Background="{DynamicResource Line}" CornerRadius="1.5" />
+                        <Border Background="{DynamicResource Accent}" CornerRadius="1.5" RenderTransformOrigin="0,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform ScaleX="{Binding Speed.Progress}" />
+                            </Border.RenderTransform>
+                        </Border>
+                    </Grid>
+                    <TextBlock Text="{Binding Speed.Detail}" Visibility="{Binding Speed.DetailVisibility}" FontSize="11"
+                               Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,8,6,0" />
+                    <DockPanel Visibility="{Binding Speed.NoteVisibility}" Margin="0,6,6,0">
+                        <Ellipse DockPanel.Dock="Left" Width="6" Height="6" Fill="{DynamicResource Warn}" Margin="0,5,6,0" VerticalAlignment="Top" />
+                        <TextBlock Text="{Binding Speed.Note}" FontSize="11" TextWrapping="Wrap" />
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Wraps rather than running off the edge when "Resume alerts" or "Testing…" changes the widths. -->
+            <WrapPanel Margin="0,12,0,0">
+                <Button Content="What's going on?" Command="{Binding AskCommand}" IsEnabled="{Binding CanAsk}" ToolTip="{Binding AskTip}"
+                        Visibility="{Binding AskVisibility}" ToolTipService.ShowOnDisabled="True" Style="{StaticResource Action}" Margin="0,0,8,6" />
+                <Button Content="History" Command="{Binding HistoryCommand}" Style="{StaticResource ActionQuiet}" Margin="0,0,8,6" />
+                <Button Content="{Binding PauseText}" Command="{Binding PauseCommand}" Style="{StaticResource ActionQuiet}" Margin="0,0,8,6" />
+                <Button Content="{Binding SpeedButtonText}" Command="{Binding SpeedTestCommand}" IsEnabled="{Binding CanSpeedTest}"
+                        ToolTip="{Binding SpeedTip}" ToolTipService.ShowOnDisabled="True" Style="{StaticResource ActionQuiet}" Margin="0,0,0,6" />
+            </WrapPanel>
+            <DockPanel Margin="0,4,0,0">
+                <ToggleButton DockPanel.Dock="Right" Content="Mini monitor" IsChecked="{Binding MiniMonitor, Mode=TwoWay}"
+                              Style="{StaticResource Switch}" ToolTip="A small always-on-top Lighthouse you can drag anywhere" />
+                <TextBlock Text="{Binding SelfLine}" FontSize="10.5" Foreground="{DynamicResource Muted}" VerticalAlignment="Center"
+                           TextWrapping="Wrap" Margin="0,0,10,0" />
+            </DockPanel>
+            </StackPanel>
+
+            <!-- History, the drill-through: one chart (what it shows and how far back), then a list whose rows open. -->
+            <StackPanel Visibility="{Binding HistoryVisibility}" Margin="0,12,0,0">
+                <DockPanel>
+                    <Button DockPanel.Dock="Left" Style="{StaticResource Back}" Command="{Binding HistoryBackCommand}"
+                            VerticalAlignment="Center" Margin="-4,0,6,0" />
+                    <ItemsControl DockPanel.Dock="Right" ItemsSource="{Binding HistoryRanges}" VerticalAlignment="Center">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Content="{Binding Label}" Command="{Binding Select}" Style="{StaticResource Chip}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="History" FontFamily="{StaticResource DisplayFont}" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </DockPanel>
+                <ItemsControl ItemsSource="{Binding HistoryMetrics}" Margin="-2,12,0,0">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Content="{Binding Label}" Command="{Binding Select}" Style="{StaticResource Chip}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <c:LineChart Height="160" Margin="0,8,0,0" Times="{Binding HistoryTimes}" Series="{Binding HistorySeries}"
+                             Maximum="{Binding HistoryMaximum}" Unit="{Binding HistoryUnit}" FitLow="{Binding HistoryFitLow}"
+                             From="{Binding HistoryFrom}" To="{Binding HistoryTo}" />
+                <TextBlock Text="{Binding HistorySummary}" Visibility="{Binding HistorySummaryVisibility}" FontSize="11"
+                           Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                <ItemsControl ItemsSource="{Binding HistoryTabs}" Margin="-2,16,0,6">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Content="{Binding Label}" Command="{Binding Select}" Style="{StaticResource Chip}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="{Binding HistoryEmpty}" Visibility="{Binding HistoryEmptyVisibility}" Foreground="{DynamicResource Muted}"
+                           TextWrapping="Wrap" Margin="0,4,0,0" />
+                <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding HistoryRows}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="Transparent" Cursor="Hand" Padding="0,4,4,4">
+                                    <Border.InputBindings>
+                                        <MouseBinding Gesture="LeftClick" Command="{Binding Toggle}" />
+                                    </Border.InputBindings>
+                                    <StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="74" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding When}" Foreground="{DynamicResource Muted}" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Title}" TextWrapping="Wrap" />
+                                        </Grid>
+                                        <TextBlock Text="{Binding Detail}" Visibility="{Binding DetailVisibility}" FontSize="11"
+                                                   Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="74,2,0,2" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

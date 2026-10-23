@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>Lighthouse</AssemblyName>
+    <RootNamespace>Lighthouse</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>lighthouse.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <!-- WPF and WinForms both define Application, Button, Timer...: keep WinForms explicit. -->
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Lighthouse.Core\Lighthouse.Core.csproj" />
+  </ItemGroup>
+
+</Project>
