@@ -20,6 +20,11 @@ public partial class FlyoutWindow : Window
         DataContext = vm;
         NativeUi.RoundCorners(this);
         Deactivated += (_, _) => Hide();
+        // History keeps the flyout's size: the same panel turning a page, its list filling what is left.
+        MainPage.SizeChanged += (_, e) =>
+        {
+            if (MainPage.Visibility == Visibility.Visible && e.NewSize.Height > 0) HistoryPage.Height = Math.Max(480, e.NewSize.Height - 12);
+        };
         IsVisibleChanged += (_, e) =>
         {
             if (!(bool)e.NewValue) Hidden?.Invoke();

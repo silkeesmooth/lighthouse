@@ -85,7 +85,7 @@ internal static class ReadmeImages
         var backup = W(backupLabel, WorkloadKind.Job, 3.2, 0, 0.6, 0, disk: 52, down: 0.1, up: 412, started: now.AddMinutes(-28));
         var llm = W("Local LLM · Qwen3-30B-A3B", WorkloadKind.LocalLlm, 2.1, 0, 1.1, 4.6);
         var claude = W("Claude Code · my-app", WorkloadKind.ClaudeCode, 1.4, 0, 0.9, 0);
-        var chrome = W("Chrome", WorkloadKind.App, 2.6, 2, 3.4, 0.6, disk: 0.6, down: 3.1, up: 0.4);
+        var chrome = W("Chrome", WorkloadKind.Browser, 2.6, 2, 3.4, 0.6, disk: 0.6, down: 3.1, up: 0.4);
         var steam = W("Steam", WorkloadKind.App, 1.9, 0, 0.8, 0, disk: 38, down: 286, up: 1.2);
         // CPU 32%, RAM 23.5 GB, VRAM 15.9 GB; disk 98 MB/s, down 296.1 Mbps, up 417 Mbps (GPU 97% is the game's engine).
         var rest = W("Everything else", WorkloadKind.Windows, 4.3, double.NaN, 6.3, 0.9);

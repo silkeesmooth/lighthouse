@@ -8,7 +8,8 @@ using D = System.Drawing;
 
 namespace Lighthouse.Controls;
 
-public sealed record SceneBoat(string Key, string Label, double Speed);
+/// <summary>A boat: a watched job or a busy program. <see cref="Sail"/> is its legend colour (null: white, an app).</summary>
+public sealed record SceneBoat(string Key, string Label, double Speed, string? Sail = null);
 
 public enum SignalPhase { Ping, Download, Upload, Done }
 
@@ -214,8 +215,10 @@ public sealed class HarbourScene : FrameworkElement
         var labels = new List<(string Text, double X, double Y)>();
         dc.DrawGeometry(new SolidColorBrush(seaBack), null, Waves(w, h, sea - 6, amp * 0.7, 1.7));
         Point? farLamp = _signal is { } shown ? DrawFarBeacon(dc, w, sea, amp, night, shown, labels) : null;
-        foreach (var boat in s.Boats) labels.Add(DrawBoat(dc, _boatX[boat.Key] * w, sea, amp, boat.Label, night));
-        if (s.Ship is { } ship) labels.Add(DrawShip(dc, w * 0.64, sea, amp, ship, night));
+        int lead = labels.Count; // a speed test's tag comes first
+        foreach (var boat in s.Boats) labels.Add(DrawBoat(dc, _boatX[boat.Key] * w, sea, amp, boat.Label, boat.Sail, night));
+        // Then the ship's tag, then the boats' (jobs, then the busiest): with no room left, the last go untagged.
+        if (s.Ship is { } ship) labels.Insert(lead, DrawShip(dc, w * 0.64, sea, amp, ship, night));
         dc.DrawGeometry(new SolidColorBrush(seaFront), null, Waves(w, h, sea, amp, 0));
         dc.DrawGeometry(null, new Pen(new SolidColorBrush(Color.FromArgb((byte)(50 + 40 * night), 237, 243, 245)), 1),
             Crest(w, sea, amp));
@@ -528,7 +531,7 @@ public sealed class HarbourScene : FrameworkElement
         }
     }
 
-    private (string, double, double) DrawBoat(DrawingContext dc, double x, double sea, double amp, string label, double night)
+    private (string, double, double) DrawBoat(DrawingContext dc, double x, double sea, double amp, string label, string? sail, double night)
     {
         double y = WaveY(x, sea, amp, 0) + 1;
         double slope = Math.Atan2(WaveY(x + 6, sea, amp, 0) - WaveY(x - 6, sea, amp, 0), 12) * 180 / Math.PI;
@@ -536,7 +539,7 @@ public sealed class HarbourScene : FrameworkElement
         var hull = new SolidColorBrush(C(SceneMath.Mix(Hex("#1d2c31"), Hex("#0b1519"), night)));
         dc.DrawGeometry(hull, null, Polygon((x - 11, y - 3), (x + 11, y - 3), (x + 7, y + 3), (x - 7, y + 3)));
         dc.DrawLine(new Pen(hull, 1), new Point(x, y - 3), new Point(x, y - 21));
-        dc.DrawGeometry(new SolidColorBrush(Hex2("#edf3f5", night)), null, Polygon((x + 1, y - 20), (x + 1, y - 5), (x + 11, y - 5)));
+        dc.DrawGeometry(new SolidColorBrush(Hex2(sail ?? "#edf3f5", night)), null, Polygon((x + 1, y - 20), (x + 1, y - 5), (x + 11, y - 5)));
         dc.DrawGeometry(new SolidColorBrush(Hex2("#d9e5d6", night)), null, Polygon((x - 1, y - 17), (x - 1, y - 5), (x - 8, y - 5)));
         dc.Pop();
         return (label, x, y - 36);
@@ -566,13 +569,16 @@ public sealed class HarbourScene : FrameworkElement
         return (name, x, y - 46);
     }
 
-    /// <summary>Name tags over the boats and the ship, left to right, each lifted above any it would overlap.</summary>
+    /// <summary>
+    /// Name tags over the boats and the ship, each lifted above any it would overlap, in the order given (the most
+    /// important first). One that would be lifted off the top of the scene is left out; its boat still sails.
+    /// </summary>
     private void DrawLabels(DrawingContext dc, List<(string Text, double X, double Y)> labels, double night, double width)
     {
         var placed = new List<Rect>();
         var ink = new SolidColorBrush(night > 0.5 ? Color.FromRgb(237, 243, 245) : Color.FromRgb(29, 44, 49));
         var fill = new SolidColorBrush(night > 0.5 ? Color.FromArgb(200, 23, 35, 39) : Color.FromArgb(215, 250, 252, 250));
-        foreach (var (text, x, y) in labels.OrderBy(l => l.X))
+        foreach (var (text, x, y) in labels)
         {
             var ft = new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
                 new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal), 10,
@@ -581,6 +587,7 @@ public sealed class HarbourScene : FrameworkElement
             double left = Math.Clamp(x - ft.Width / 2 - 6, 4, Math.Max(4, width - ft.Width - 16));
             var tag = new Rect(left, y - 1, ft.Width + 12, ft.Height + 2);
             while (placed.Any(r => r.IntersectsWith(tag))) tag.Offset(0, -(tag.Height + 3));
+            if (tag.Top < 2) continue;
             placed.Add(tag);
             dc.DrawRoundedRectangle(fill, null, tag, 4, 4);
             dc.DrawText(ft, new Point(tag.X + 6, tag.Y + 1));

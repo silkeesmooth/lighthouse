@@ -71,6 +71,9 @@ public sealed record CardVm(string Title, string Body, Brush Tone, string? Actio
     public Visibility FooterVisibility => ActionText is null && Explain is null ? Visibility.Collapsed : Visibility.Visible;
 }
 
+/// <summary>One line of the scene's legend: a part of the scene and what it shows now.</summary>
+public sealed record LegendItemVm(string Name, string Meaning);
+
 /// <summary>One choice of a row of chips (the History page's range, metric and list).</summary>
 public sealed record ChipVm(string Label, bool Selected, ICommand Select);
 
@@ -122,7 +125,10 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
     private SceneSignal? _signal;
     private DateTime _signalUntil;
     private string? _copiedNote;
-    private readonly ClosedCards _closedCards = new();
+    private readonly ClosedCards _closedCards;
+    private readonly SceneBoats _boats = new();
+    /// <summary>When Windows started: closed cards stay closed until it starts again.</summary>
+    private static readonly DateTime Boot = ClosedCards.BootTime(DateTime.Now, Environment.TickCount64);
 
     private readonly Action<bool> _setMini;
 
@@ -130,6 +136,13 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
     {
         _engine = engine;
         _setMini = setMini;
+        _closedCards = new ClosedCards(ClosedCards.Restore(engine.Settings.ClosedCards, engine.Settings.ClosedCardsBoot, Boot));
+        SceneLegendCommand = new RelayCommand(() =>
+        {
+            _engine.Settings.SceneLegend = !_engine.Settings.SceneLegend;
+            _engine.SaveSettings();
+            Raise(nameof(SceneLegendVisibility));
+        });
         Tiles = [_cpu, _gpu, _ram, _vram];
         foreach (var tile in Tiles) tile.Open = new RelayCommand(() => ShowHistory(tile.Label, TimeSpan.FromHours(1)));
         HistoryBackCommand = new RelayCommand(ShowMain);
@@ -229,6 +242,26 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
         : $"Test the internet connection's download, upload and ping (about 20 seconds, up to {(SpeedTest.MaxDownBytes + SpeedTest.MaxUpBytes) / 1_000_000} MB, through speed.cloudflare.com).";
 
     /// <summary>The always-on-top mini monitor (off until it is switched on).</summary>
+    /// <summary>The Dark mode switch: Windows' app theme until it is flipped, then the choice is kept ("theme").</summary>
+    public bool DarkMode
+    {
+        get => !Theme.IsLight;
+        set
+        {
+            if (value == DarkMode) return;
+            _engine.Settings.Theme = value ? "dark" : "light";
+            _engine.SaveSettings();
+            Theme.Chosen = !value;
+            Theme.Apply();
+            if (_last is { } s) Update(s); // the rows' dots and the tiles' colours come from the palette
+        }
+    }
+
+    // The scene's legend: what each part of the scene shows, with its reading now. Opened with the scene's "?".
+    public Visibility SceneLegendVisibility => _engine.Settings.SceneLegend ? Visibility.Visible : Visibility.Collapsed;
+    public ICommand SceneLegendCommand { get; }
+    public IReadOnlyList<LegendItemVm> SceneLegend { get; private set; } = [];
+
     public bool MiniMonitor
     {
         get => _engine.Settings.MiniMonitor;
@@ -451,8 +484,10 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
             TrayIconRenderer.CpuHeat(s.CpuTemp),
             s.GpuLoad,
             s.RamTotalGb > 0 ? s.RamUsedGb / s.RamTotalGb : 0,
-            s.AllWorkloads.Where(w => w.Kind == WorkloadKind.Job)
-                .Select(w => new SceneBoat(w.Key, SceneMath.ShortRunLabel(w.Label), 8 + 0.8 * w.CpuPct))
+            // Watched jobs and busy programs sail, each with its legend colour for a sail.
+            _boats.Pick(s.AllWorkloads, now, Environment.ProcessorCount)
+                .Select(w => new SceneBoat(w.Key, w.Kind == WorkloadKind.Job ? SceneMath.ShortRunLabel(w.Label) : ShortName(w.Label),
+                    Math.Min(40, 8 + 0.8 * w.CpuPct), SailHex(w.Kind)))
                 .ToList(),
             s.Game?.Label,
             Moon: s.LocalLlm is not null,
@@ -466,6 +501,7 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
             NetDownMbps: s.NetDownBytesPerSec * 8 / 1e6,
             NetUpMbps: s.NetUpBytesPerSec * 8 / 1e6,
             DiskActivity: s.DiskActivePct / 100);
+        SceneLegend = BuildLegend(s, Scene.Boats.Count);
 
         Rows = IoView ? IoRows(s) : LoadRows(s);
         IoNote = s.IoTraced ? ""
@@ -538,7 +574,44 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
         WorkloadKinds.IsAi(kind) ? "Accent"
         : WorkloadKinds.IsJob(kind) ? "Good"
         : kind == WorkloadKind.Game ? "Warn"
+        : kind == WorkloadKind.Browser ? "Web"
         : null;
+
+    /// <summary>A boat's sail in its legend colour, the dark palette's (lighter) shade so it shows on the sea; white for an app.</summary>
+    private static string? SailHex(WorkloadKind kind) => BadgeKey(kind) switch
+    {
+        "Accent" => "#7fb3c2",
+        "Good" => "#8fb386",
+        "Web" => "#8fb3d9",
+        _ => null,
+    };
+
+    /// <summary>A name tag short enough for the sea.</summary>
+    private static string ShortName(string label) => label.Length <= 18 ? label : label[..17].TrimEnd() + "…";
+
+    /// <summary>The scene's parts and what each shows now.</summary>
+    private List<LegendItemVm> BuildLegend(Snapshot s, int boats)
+    {
+        double down = s.NetDownBytesPerSec * 8 / 1e6, up = s.NetUpBytesPerSec * 8 / 1e6;
+        var alerts = _engine.ActiveAlerts;
+        string weather = alerts.Any(a => a.Severity == Severity.Critical) ? "lightning now: a critical alert is up"
+            : alerts.Any(a => a.Severity >= Severity.Warning) ? "a storm now: a warning is up"
+            : s.CommitPct >= 85 ? "fog now: memory is filling"
+            : "clear now";
+        return
+        [
+            new("Beam", $"CPU, {s.CpuLoad:0}% now. It turns faster with load and warms toward red as the CPU heats up."),
+            new("Sea", $"RAM sets its height ({(s.RamTotalGb > 0 ? s.RamUsedGb / s.RamTotalGb * 100 : 0):0}% now); GPU load its waves ({s.GpuLoad:0}%)."),
+            new("Boats", (boats == 1 ? "1 now" : $"{boats} now") +
+                         ": watched jobs and busy programs. The sail is the program's dot colour in Using it now."),
+            new("Ship", s.Game is { } game ? $"{game.Label}, the game running now." : "A game, when one runs."),
+            new("Moon", s.LocalLlm is null ? "The local LLM, when one runs." : "The local LLM. It glows while it works."),
+            new("Gulls", $"The network: in with downloads ({down:0} Mbps now), out with uploads ({up:0} Mbps)."),
+            new("Foam", $"The disk: {s.DiskActivePct:0}% busy now."),
+            new("Weather", $"Alerts and memory: {weather}. Heat shimmer by the lantern means the CPU is hot."),
+            new("Light", "A speed test, crossing to the beacon on the far shore."),
+        ];
+    }
 
     private List<CardVm> BuildCards(Snapshot s, DateTime now)
     {
@@ -634,6 +707,9 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
     private void CloseCard(string key)
     {
         _closedCards.Close(key);
+        _engine.Settings.ClosedCards = [.. _closedCards.Keys];
+        _engine.Settings.ClosedCardsBoot = Boot;
+        _engine.SaveSettings();
         if (_engine.Latest is { } s) Update(s);
     }
 

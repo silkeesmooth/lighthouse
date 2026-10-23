@@ -6,24 +6,42 @@ namespace Lighthouse.Tests;
 
 public class ClosedCardsTests
 {
+    private static readonly DateTime Boot = new(2026, 10, 23, 8, 51, 0);
+
     [Fact]
-    public void A_closed_card_stays_hidden_while_it_would_still_show()
+    public void A_closed_card_stays_closed_even_when_it_goes_away_and_comes_back()
     {
         var closed = new ClosedCards();
-        closed.Close("alert:cpu-temp");
-        Assert.Equal(["health-ok"], closed.Visible(["alert:cpu-temp", "health-ok"], k => k));
-        Assert.Equal(["health-ok"], closed.Visible(["alert:cpu-temp", "health-ok"], k => k)); // a second later, still hot
+        closed.Close("health:ram-speed");
+        Assert.Equal(["health-ok"], closed.Visible(["health:ram-speed", "health-ok"], k => k));
+        closed.Visible(["health-ok"], k => k); // it passed for a while
+        Assert.Equal(["health-ok"], closed.Visible(["health:ram-speed", "health-ok"], k => k)); // and failed again: still closed
     }
 
     [Fact]
-    public void Once_it_goes_away_the_next_one_like_it_shows_again()
+    public void Closed_cards_survive_a_Lighthouse_restart_but_not_a_Windows_restart()
     {
-        var closed = new ClosedCards();
-        closed.Close("alert:cpu-temp");
-        closed.Visible(["alert:cpu-temp"], k => k);
-        closed.Visible(["health-ok"], k => k); // the alert cleared
-        Assert.Equal(["alert:cpu-temp"], closed.Visible(["alert:cpu-temp"], k => k)); // and fired again: it shows
+        string[] saved = ["health:ram-speed", "alert:cpu-temp"];
+        // Lighthouse restarted (an update): Windows started at the same time, give or take the clock's rounding.
+        Assert.Equal(saved, ClosedCards.Restore(saved, Boot, Boot.AddSeconds(40)));
+        // Windows restarted since: everything shows once more.
+        Assert.Empty(ClosedCards.Restore(saved, Boot, Boot.AddHours(9)));
+        Assert.Empty(ClosedCards.Restore(saved, null, Boot));
     }
+
+    [Fact]
+    public void Old_keys_are_dropped_past_the_limit()
+    {
+        var closed = new ClosedCards(Enumerable.Range(0, ClosedCards.Most).Select(i => $"job:{i}"));
+        closed.Close("job:new");
+        Assert.Equal(ClosedCards.Most, closed.Keys.Count);
+        Assert.Equal("job:1", closed.Keys[0]);
+        Assert.Equal("job:new", closed.Keys[^1]);
+    }
+
+    [Fact]
+    public void Windows_start_time_is_now_minus_its_uptime() =>
+        Assert.Equal(Boot, ClosedCards.BootTime(Boot.AddHours(3), 3 * 3_600_000));
 }
 
 public class SpeedTestViewTests

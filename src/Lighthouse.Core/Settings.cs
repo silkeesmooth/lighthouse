@@ -75,6 +75,13 @@ public sealed record Settings
     /// <see cref="MiniTop"/>. Set from the mini's Favorite spot menu; a drag only moves it for now.
     /// </summary>
     public string MiniFavorite { get; set; } = "bottom-right";
+    /// <summary>"system" follows Windows' app theme; "light" or "dark" is the flyout's Dark mode switch.</summary>
+    public string Theme { get; set; } = "system";
+    /// <summary>The key under the scene, opened with its "?".</summary>
+    public bool SceneLegend { get; set; }
+    /// <summary>Cards closed with their ×, kept closed until Windows restarts (<see cref="ClosedCardsBoot"/>).</summary>
+    public List<string> ClosedCards { get; set; } = [];
+    public DateTime? ClosedCardsBoot { get; set; }
     /// <summary>LM Studio's server port, when it isn't LM Studio's default (1234).</summary>
     public int? LmStudioPort { get; init; }
     public double? MiniLeft { get; set; }

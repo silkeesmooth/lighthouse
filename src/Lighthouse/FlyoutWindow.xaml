@@ -14,8 +14,30 @@
                 <TextBlock DockPanel.Dock="Left" Text="LIGHTHOUSE" FontWeight="Bold" FontSize="11" Foreground="{DynamicResource Accent}" Margin="0,0,12,0" />
                 <TextBlock Text="{Binding MachineLine}" TextAlignment="Right" TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource Muted}" />
             </DockPanel>
-            <StackPanel Visibility="{Binding MainVisibility}">
-            <c:HarbourScene x:Name="Scene" Height="150" Margin="0,10,0,0" />
+            <StackPanel x:Name="MainPage" Visibility="{Binding MainVisibility}">
+            <Grid Margin="0,10,0,0">
+                <c:HarbourScene x:Name="Scene" Height="150" />
+                <Button Content="?" Command="{Binding SceneLegendCommand}" Style="{StaticResource SceneHelp}"
+                        HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,8" ToolTip="What's in the scene" />
+            </Grid>
+            <!-- The scene's legend: each part and what it shows now. -->
+            <Border Visibility="{Binding SceneLegendVisibility}" Background="{DynamicResource Surface}" CornerRadius="10"
+                    Padding="12,8,10,8" Margin="0,6,0,0">
+                <ItemsControl ItemsSource="{Binding SceneLegend}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="58" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Name}" FontSize="11" FontWeight="SemiBold" />
+                                <TextBlock Grid.Column="1" Text="{Binding Meaning}" FontSize="11" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
             <TextBlock Text="{Binding Headline}" FontFamily="{StaticResource DisplayFont}" FontSize="17" FontWeight="SemiBold"
                        TextWrapping="Wrap" Margin="0,10,0,2" />
             <TextBlock Text="{Binding Subline}" FontSize="11" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" />
@@ -137,8 +159,13 @@
                     <Ellipse Width="7" Height="7" Fill="{DynamicResource Warn}" Margin="0,0,5,0" VerticalAlignment="Center" />
                     <TextBlock Text="Games" />
                 </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,14,2" Background="Transparent"
+                            ToolTip="Web browsers: Chrome, Edge, Firefox, Brave, Opera, Vivaldi, Arc">
+                    <Ellipse Width="7" Height="7" Fill="{DynamicResource Web}" Margin="0,0,5,0" VerticalAlignment="Center" />
+                    <TextBlock Text="Internet" />
+                </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,2" Background="Transparent"
-                            ToolTip="Everything else: browsers, editors, Windows itself">
+                            ToolTip="Everything else: editors, chat and music apps, Windows itself">
                     <Ellipse Width="7" Height="7" Stroke="{DynamicResource Muted}" StrokeThickness="1.2" Margin="0,0,5,0" VerticalAlignment="Center" />
                     <TextBlock Text="Apps and Windows" />
                 </StackPanel>
@@ -262,14 +289,16 @@
             <DockPanel Margin="0,4,0,0">
                 <ToggleButton DockPanel.Dock="Right" Content="Mini monitor" IsChecked="{Binding MiniMonitor, Mode=TwoWay}"
                               Style="{StaticResource Switch}" ToolTip="A small always-on-top Lighthouse you can drag anywhere" />
+                <ToggleButton DockPanel.Dock="Right" Content="Dark mode" IsChecked="{Binding DarkMode, Mode=TwoWay}"
+                              Style="{StaticResource Switch}" Margin="0,0,14,0" ToolTip="Follows Windows' app theme until you switch it" />
                 <TextBlock Text="{Binding SelfLine}" FontSize="10.5" Foreground="{DynamicResource Muted}" VerticalAlignment="Center"
                            TextWrapping="Wrap" Margin="0,0,10,0" />
             </DockPanel>
             </StackPanel>
 
             <!-- History, the drill-through: one chart (what it shows and how far back), then a list whose rows open. -->
-            <StackPanel Visibility="{Binding HistoryVisibility}" Margin="0,12,0,0">
-                <DockPanel>
+            <DockPanel x:Name="HistoryPage" Height="700" Visibility="{Binding HistoryVisibility}" Margin="0,12,0,0">
+                <DockPanel DockPanel.Dock="Top">
                     <Button DockPanel.Dock="Left" Style="{StaticResource Back}" Command="{Binding HistoryBackCommand}"
                             VerticalAlignment="Center" Margin="-4,0,6,0" />
                     <ItemsControl DockPanel.Dock="Right" ItemsSource="{Binding HistoryRanges}" VerticalAlignment="Center">
@@ -286,7 +315,7 @@
                     </ItemsControl>
                     <TextBlock Text="History" FontFamily="{StaticResource DisplayFont}" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center" />
                 </DockPanel>
-                <ItemsControl ItemsSource="{Binding HistoryMetrics}" Margin="-2,12,0,0">
+                <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding HistoryMetrics}" Margin="-2,12,0,0">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <WrapPanel />
@@ -298,12 +327,12 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <c:LineChart Height="160" Margin="0,8,0,0" Times="{Binding HistoryTimes}" Series="{Binding HistorySeries}"
+                <c:LineChart DockPanel.Dock="Top" Height="160" Margin="0,8,0,0" Times="{Binding HistoryTimes}" Series="{Binding HistorySeries}"
                              Maximum="{Binding HistoryMaximum}" Unit="{Binding HistoryUnit}" FitLow="{Binding HistoryFitLow}"
                              From="{Binding HistoryFrom}" To="{Binding HistoryTo}" />
-                <TextBlock Text="{Binding HistorySummary}" Visibility="{Binding HistorySummaryVisibility}" FontSize="11"
+                <TextBlock DockPanel.Dock="Top" Text="{Binding HistorySummary}" Visibility="{Binding HistorySummaryVisibility}" FontSize="11"
                            Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,4,0,0" />
-                <ItemsControl ItemsSource="{Binding HistoryTabs}" Margin="-2,16,0,6">
+                <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding HistoryTabs}" Margin="-2,16,0,6">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <WrapPanel />
@@ -315,9 +344,9 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <TextBlock Text="{Binding HistoryEmpty}" Visibility="{Binding HistoryEmptyVisibility}" Foreground="{DynamicResource Muted}"
+                <TextBlock DockPanel.Dock="Top" Text="{Binding HistoryEmpty}" Visibility="{Binding HistoryEmptyVisibility}" Foreground="{DynamicResource Muted}"
                            TextWrapping="Wrap" Margin="0,4,0,0" />
-                <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding HistoryRows}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
@@ -342,7 +371,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </ScrollViewer>
-            </StackPanel>
+            </DockPanel>
         </StackPanel>
     </Border>
 </Window>

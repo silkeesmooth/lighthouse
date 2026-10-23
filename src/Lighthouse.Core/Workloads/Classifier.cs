@@ -135,6 +135,7 @@ public sealed class Classifier(int ownPid, IReadOnlyList<WorkloadOverride>? over
     {
         "Terminal" or "File Explorer" => WorkloadKind.Shell,
         "Copilot" => WorkloadKind.AiApp,
+        "Chrome" or "Edge" or "Firefox" or "Brave" or "Opera" or "Vivaldi" or "Arc" => WorkloadKind.Browser,
         _ => WorkloadKind.App,
     };
 
@@ -142,6 +143,11 @@ public sealed class Classifier(int ownPid, IReadOnlyList<WorkloadOverride>? over
     {
         ["chrome.exe"] = "Chrome",
         ["msedge.exe"] = "Edge",
+        ["firefox.exe"] = "Firefox",
+        ["brave.exe"] = "Brave",
+        ["opera.exe"] = "Opera",
+        ["vivaldi.exe"] = "Vivaldi",
+        ["arc.exe"] = "Arc",
         ["code.exe"] = "VS Code",
         ["rstudio.exe"] = "R / RStudio",
         ["rsession.exe"] = "R / RStudio",

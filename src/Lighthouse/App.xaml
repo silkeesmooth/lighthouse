@@ -184,6 +184,32 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- The scene's "?": a small dark disc over the scene, for its legend. -->
+        <Style x:Key="SceneHelp" TargetType="Button">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Width" Value="20" />
+            <Setter Property="Height" Value="20" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Ellipse x:Name="e" Fill="#59000000" />
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="e" Property="Fill" Value="#99000000" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style x:Key="ActionQuiet" TargetType="Button" BasedOn="{StaticResource Action}">
             <Setter Property="Foreground" Value="{DynamicResource Ink}" />
             <Setter Property="Background" Value="{DynamicResource Surface}" />

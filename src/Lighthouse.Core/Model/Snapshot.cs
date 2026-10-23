@@ -16,6 +16,8 @@ public enum WorkloadKind
     Shell,
     Windows,
     Lighthouse,
+    /// <summary>Web browsers: Chrome, Edge, Firefox... (the legend's "Internet"). Last, so earlier kinds keep their numbers.</summary>
+    Browser,
 }
 
 public static class WorkloadKinds

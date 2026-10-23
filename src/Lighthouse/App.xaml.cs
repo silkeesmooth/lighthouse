@@ -164,8 +164,10 @@ public partial class App : Application
         }
 
         NativeUi.AllowTrayMessagesWhenElevated();
+        var settings = Settings.Load();
+        Theme.Chosen = settings.Theme switch { "light" => true, "dark" => false, _ => null };
         Theme.Apply();
-        _engine = new MonitorEngine(Settings.Load());
+        _engine = new MonitorEngine(settings);
         _tray = new TrayIcon(_engine);
         _engine.Start();
         Log.Write($"Lighthouse {typeof(App).Assembly.GetName().Version} up (pid {Environment.ProcessId}); {Core.Native.UserContext.Describe()}");

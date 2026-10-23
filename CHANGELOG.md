@@ -2,6 +2,21 @@
 
 Newest first.
 
+## 2026-10-23: dark mode switch, a scene legend, more boats, cards that stay closed
+
+- **A Dark mode switch** at the bottom of the flyout. Lighthouse follows Windows' app theme until you flip it,
+  then keeps the choice (`theme`: `system`, `light` or `dark`).
+- **History keeps the flyout's size**, so it reads as the same panel turning a page; its list fills the rest.
+- **A legend for the scene**, opened with its **?** (`sceneLegend`): each part (beam, sea, boats, ship, moon,
+  gulls, foam, weather, light) and what it shows right now.
+- **More boats.** As well as watched jobs, any program working hard (about a core of CPU, 10% of the GPU, or
+  5 Mbps of network) sails, for at least 30 seconds once it calms down, up to 6. Each sail is the program's dot
+  colour in Using it now (`SceneBoats`, with tests). When tags run out of room the busiest keep theirs.
+- **An Internet group**: web browsers (Chrome, Edge, Firefox, Brave, Opera, Vivaldi, Arc) get their own blue dot.
+- **A closed card stays closed until Windows restarts.** Closing was remembered only while Lighthouse ran, and only
+  until the card went away, so an update or a check that came back brought the same card back. The closed cards
+  are saved with the time Windows started (`ClosedCards`, with tests).
+
 ## 2026-10-23: tidier README pictures
 
 - The animated scene is an animated PNG (`Apng`, with tests) instead of a GIF: full colour, so the dusk sky has no

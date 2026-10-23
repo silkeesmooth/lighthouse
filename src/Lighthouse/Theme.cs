@@ -24,12 +24,20 @@ public static class Theme
         ["ButtonBg"] = ("#2e6171", "#2e6171"),
         ["ButtonFg"] = ("#fafcfa", "#edf3f5"),
         ["Series2"] = ("#b8962e", "#f1e38f"),
+        ["Web"] = ("#4f7cac", "#8fb3d9"),
     };
 
-    /// <summary>Windows' app theme, or the one asked for (the README pictures draw both).</summary>
+    /// <summary>The flyout's Dark mode switch: true light, false dark, null follows Windows.</summary>
+    public static bool? Chosen { get; set; }
+
+    /// <summary>Whether the palette now in use is the light one.</summary>
+    public static bool IsLight { get; private set; } = true;
+
+    /// <summary>The chosen theme, else Windows' app theme; or the one asked for (the README pictures draw both).</summary>
     public static void Apply(bool? light = null)
     {
-        bool isLight = light ?? AppsLight;
+        bool isLight = light ?? Chosen ?? AppsLight;
+        IsLight = isLight;
         foreach (var (key, (lightHex, darkHex)) in Colors)
         {
             var color = (Color)ColorConverter.ConvertFromString(isLight ? lightHex : darkHex);

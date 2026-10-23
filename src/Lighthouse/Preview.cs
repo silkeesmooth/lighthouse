@@ -131,6 +131,7 @@ internal static class Preview
         Theme.Apply();
         Gauge.Animate = false; // the picture shows gauges at their values
         using var engine = new MonitorEngine(Settings.Load(), diagnostic: true);
+        engine.Settings.SceneLegend = true; // the scene's legend, open: its text is checked too (in memory only)
         var vm = new FlyoutViewModel(engine, _ => { });
         WorkloadUsage W(string label, WorkloadKind kind, DateTime? started = null) => new(label, label, kind, 100, 100, 63.9, 19.9, 999,
             Started: started, DiskMBps: 9999, NetDownMbps: 9999, NetUpMbps: 9999);
@@ -161,7 +162,7 @@ internal static class Preview
                 W("Claude Code (12)", WorkloadKind.ClaudeCode),
                 W("Windows Update", WorkloadKind.Windows),
                 W("Pipeline review app: 8000", WorkloadKind.Service),
-                W("Chrome", WorkloadKind.App),
+                W("Chrome", WorkloadKind.Browser),
             ],
             Rest = W("Everything else", WorkloadKind.Windows),
             Self = W("Lighthouse", WorkloadKind.Lighthouse),

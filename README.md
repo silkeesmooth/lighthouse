@@ -15,13 +15,18 @@ file, and Exit Lighthouse. Windows 11 puts a new tray icon in the hidden-icons o
 onto the taskbar once, and if you hide it again after that, it stays hidden.
 
 The flyout has a small animated scene. A lighthouse's beam turns faster with CPU load, the sea rises with RAM
-and gets choppier with GPU load, watched jobs sail past as boats, a game is a ship, a local LLM is the moon, and
-a speed test is light crossing the sea. Trouble shows as weather: a storm while a warning is up (with one
+and gets choppier with GPU load, watched jobs and busy programs sail past as boats (each sail in its group's
+colour from the legend below the list), a game is a ship, a local LLM is the moon, and a speed test is light
+crossing the sea. Trouble shows as weather: a storm while a warning is up (with one
 lightning flash when a critical alert starts), fog as memory fills, and heat shimmer by the lantern when the CPU
 is hot. Gulls fly in with downloads and out with uploads, and foam on the waves follows the disk. Below the scene
 you get a one-line headline, four gauges (CPU, GPU, RAM, VRAM; click one for its history) and what is using the
-machine right now. Cards under that (alerts, job runs, health checks, results) each
-have a × that hides them until they go away and come back.
+machine right now. Cards under that (alerts, job runs, health checks, results) each have a × that closes them
+until Windows restarts, even if they go away and come back, or Lighthouse restarts for an update.
+
+- **What's in the scene:** the scene's **?** opens a legend of each part and what it shows right now.
+- **Dark mode:** the switch at the bottom of the flyout. Lighthouse follows Windows' app theme until you switch
+  it, then keeps your choice (`theme` in the settings; `"system"` follows Windows again).
 
 <p align="center">
   <img src="docs/images/flyout-light.png" width="400" align="top" alt="The flyout: the scene, the headline, four gauges, what is using the PC by load, a watched job's card with its usual time, and a speed test result">
@@ -73,7 +78,8 @@ by default and costs about 0.2% of a 16-core CPU while shown.
     ChatGPT, Copilot;
   - **Jobs** (green): your own scripts and servers (below);
   - **Games** (amber): anything from a Steam, Epic, EA, Riot, GOG, Ubisoft or Xbox game folder;
-  - **Apps and Windows** (empty ring): Chrome, VS Code, Defender, Windows Update, and so on.
+  - **Internet** (blue): web browsers: Chrome, Edge, Firefox, Brave, Opera, Vivaldi, Arc;
+  - **Apps and Windows** (empty ring): VS Code, Discord, Defender, Windows Update, and so on.
 
   A switch on the same line shows the list by **Load** (CPU, GPU, RAM, VRAM) or by **Disk & network** (CPU, disk
   MB/s, download and upload Mbps). Disk and network per program come from the sensor helper's kernel trace.
@@ -163,8 +169,8 @@ by default and costs about 0.2% of a 16-core CPU while shown.
   - events, job runs and speed tests for a year;
   - game sessions.
 
-  It opens inside the flyout: the History button, the tray menu's History, or a click on a gauge (which opens
-  that gauge's last hour). The back arrow or Escape returns to the main page. The page has one chart, with
+  It opens inside the flyout, at the flyout's own size: the History button, the tray menu's History, or a click on
+  a gauge (which opens that gauge's last hour). The back arrow or Escape returns to the main page. The page has one chart, with
   chips for what it shows (CPU, GPU, RAM, VRAM, or temperatures) and how far back (1 hour, 24 hours, 7 days).
   The line breaks wherever nothing was recorded (the PC was off or asleep), keeps each moment's peak so it
   reaches the "max" under it, and temperatures start near their lowest reading instead of 0. Under the chart, a
@@ -188,6 +194,8 @@ shows the list settings (`jobs`, `workloadNames`, `autostartOff`):
 | `lmStudioPort` | LM Studio's server port, when it isn't 1234. |
 | `quietInGames` | Only critical alerts toast during a game (default true). |
 | `usingView` | "Using it now" by `load` or by `io` (disk and network); the flyout's switch sets it. |
+| `theme` | `system` (follow Windows), `light` or `dark`; the flyout's Dark mode switch sets it. |
+| `sceneLegend` | The scene's legend is open (its **?** sets it). |
 | `internetPlan` | `{ "downMbps": 500, "upMbps": 50 }`: speed tests say how much of it you got. |
 | `dailySpeedTest` | A daily speed test after this time, such as `"03:30"`, when you're away. Off by default. |
 | `jobToastMinSeconds`, `gameSummaryMinMinutes` | Shorter runs and games are logged without a toast. |
