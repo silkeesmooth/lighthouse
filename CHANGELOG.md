@@ -8,6 +8,9 @@ Newest first.
   with a × to close it, instead of pushing the panel down. Growing the window moved it up a frame after drawing it,
   so the legend's text flashed in the wrong place and the panel jumped; now the window keeps its size.
 - **US spelling** in everything you read: color, gray, harbor, recognized.
+- **A one-command install,** `tools\install.ps1`: installs the .NET 10 SDK with winget if it's missing, builds,
+  then runs `setup-admin.ps1` behind one UAC prompt. The README is now short, with the install first; every detail
+  it had moved, unchanged, to [docs/reference.md](docs/reference.md).
 
 ## 2026-10-23: the mini gets out of the way of fullscreen video
 
