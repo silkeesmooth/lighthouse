@@ -1,6 +1,6 @@
 # Lighthouse
 
-<p align="center"><img src="docs/images/scene.png" width="394" alt="The flyout's harbour scene at dusk: the beam turns, a backup job sails past as a boat, a game is a ship, gulls fly in with a download"></p>
+<p align="center"><img src="docs/images/scene.png" width="394" alt="The flyout's harbor scene at dusk: the beam turns, a backup job sails past as a boat, a game is a ship, gulls fly in with a download"></p>
 
 A CPU and GPU monitor for the Windows 11 taskbar. It shows as two live bars (CPU left, GPU right) that fill with
 load and turn from Payne's gray to amber to red as each chip heats up. Click it for the flyout, right-click
@@ -16,7 +16,7 @@ onto the taskbar once, and if you hide it again after that, it stays hidden.
 
 The flyout has a small animated scene. A lighthouse's beam turns faster with CPU load, the sea rises with RAM
 and gets choppier with GPU load, watched jobs and busy programs sail past as boats (each sail in its group's
-colour from the legend below the list), a game is a ship, a local LLM is the moon, and a speed test is light
+color from the legend below the list), a game is a ship, a local LLM is the moon, and a speed test is light
 crossing the sea. Trouble shows as weather: a storm while a warning is up (with one
 lightning flash when a critical alert starts), fog as memory fills, and heat shimmer by the lantern when the CPU
 is hot. Gulls fly in with downloads and out with uploads, and foam on the waves follows the disk. Below the scene

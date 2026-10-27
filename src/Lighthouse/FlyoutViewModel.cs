@@ -603,7 +603,7 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
             new("Beam", $"CPU, {s.CpuLoad:0}% now. It turns faster with load and warms toward red as the CPU heats up."),
             new("Sea", $"RAM sets its height ({(s.RamTotalGb > 0 ? s.RamUsedGb / s.RamTotalGb * 100 : 0):0}% now); GPU load its waves ({s.GpuLoad:0}%)."),
             new("Boats", (boats == 1 ? "1 now" : $"{boats} now") +
-                         ": watched jobs and busy programs. The sail is the program's dot colour in Using it now."),
+                         ": watched jobs and busy programs. The sail is the program's dot color in Using it now."),
             new("Ship", s.Game is { } game ? $"{game.Label}, the game running now." : "A game, when one runs."),
             new("Moon", s.LocalLlm is null ? "The local LLM, when one runs." : "The local LLM. It glows while it works."),
             new("Gulls", $"The network: in with downloads ({down:0} Mbps now), out with uploads ({up:0} Mbps)."),
@@ -634,7 +634,7 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
             string body = Join($"GPU{Nb}{s.GpuLoad:0}%", Deg(s.GpuTemp), s.GpuHotspot is { } h ? $"hotspot{Nb}{h:0}°C" : null,
                 Deg(s.CpuTemp) is { } c ? $"CPU {c}" : null) + ". " + ccd;
             if (_engine.BothCcdsActiveWarning)
-                body += " Game Bar may not have recognised it: AMD's driver only parks CCD1 for games it knows.";
+                body += " Game Bar may not have recognized it: AMD's driver only parks CCD1 for games it knows.";
             var llm = s.LocalLlm;
             bool offerStop = llm is not null && llm.VramGb >= settings.Thresholds.LlmVramContentionGb;
             if (offerStop) body += $" The local LLM holds {llm!.VramGb:0.0} GB of VRAM.";

@@ -46,7 +46,7 @@ helper takes the pipe name first (`FirstPipeInstance`), so another program can't
   flyout, toasts and History.
 - **Started as admin by hand**, the app still protects itself: it refuses a data folder that is a link and holds
   it open, and opens other files and programs (the LLM's key file, Notepad) with your own rights.
-- **What the mini monitor reads off the screen.** Once a second it reads the pixels behind it, to colour its text
+- **What the mini monitor reads off the screen.** Once a second it reads the pixels behind it, to color its text
   and, with "Move away from text" on, to tell whether text is under it. When it needs to move it also reads the 8
   spots it could go to, and while it is away, its favorite spot. The pixels are scored in memory and dropped: never saved, logged or sent. The mini leaves
   itself out of screen captures, so it doesn't appear in screenshots or screen shares.

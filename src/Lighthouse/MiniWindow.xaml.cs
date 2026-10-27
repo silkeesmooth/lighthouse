@@ -47,7 +47,7 @@ public partial class MiniWindow : Window
         _tiles = vm.Tiles.Select(t => new MiniTile(t)).ToList();
         TileList.ItemsSource = _tiles;
         _excluded = NativeUi.ExcludeFromCapture(this);
-        if (!_excluded) Log.Write("mini monitor: Windows refused capture exclusion; text colour follows the desktop around its edges");
+        if (!_excluded) Log.Write("mini monitor: Windows refused capture exclusion; text color follows the desktop around its edges");
         PaintPanel();
         IsVisibleChanged += (_, _) => PaintPanel(); // picks up a light/dark theme change
         OpenItem.Click += (_, _) => openFlyout();

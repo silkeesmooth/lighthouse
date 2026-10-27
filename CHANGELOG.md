@@ -2,6 +2,13 @@
 
 Newest first.
 
+## 2026-10-27: the scene legend opens without a flash, US spelling
+
+- **The scene legend opens as its own card** over the headline and the four gauges, titled "What's in the scene"
+  with a × to close it, instead of pushing the panel down. Growing the window moved it up a frame after drawing it,
+  so the legend's text flashed in the wrong place and the panel jumped; now the window keeps its size.
+- **US spelling** in everything you read: color, gray, harbor, recognized.
+
 ## 2026-10-23: the mini gets out of the way of fullscreen video
 
 - **During fullscreen video** (right-click on the mini, `miniFullscreen`): while a fullscreen window covers the
@@ -21,7 +28,7 @@ Newest first.
   gulls, foam, weather, light) and what it shows right now.
 - **More boats.** As well as watched jobs, any program working hard (about a core of CPU, 10% of the GPU, or
   5 Mbps of network) sails, for at least 30 seconds once it calms down, up to 6. Each sail is the program's dot
-  colour in Using it now (`SceneBoats`, with tests). When tags run out of room the busiest keep theirs.
+  color in Using it now (`SceneBoats`, with tests). When tags run out of room the busiest keep theirs.
 - **An Internet group**: web browsers (Chrome, Edge, Firefox, Brave, Opera, Vivaldi, Arc) get their own plum dot, apart from the AI teal.
 - **A closed card stays closed until Windows restarts.** Closing was remembered only while Lighthouse ran, and only
   until the card went away, so an update or a check that came back brought the same card back. The closed cards
@@ -29,11 +36,11 @@ Newest first.
 
 ## 2026-10-23: tidier README pictures
 
-- The animated scene is an animated PNG (`Apng`, with tests) instead of a GIF: full colour, so the dusk sky has no
+- The animated scene is an animated PNG (`Apng`, with tests) instead of a GIF: full color, so the dusk sky has no
   bands, and see-through rounded corners that suit GitHub's light and dark pages. It is smaller too (1.3 MB, was
   2 MB).
 - The two flyout pictures carry the same cards, so they are the same height, and sit top-aligned side by side.
-- The four-scene picture has a see-through background and captions in a grey that reads on both pages.
+- The four-scene picture has a see-through background and captions in a gray that reads on both pages.
 - Light pictures by default, and a **Dark mode** section that opens to the same two in dark. A README can't offer
   a real switch, and following the reader's GitHub theme gave no way to see the other one.
 
@@ -75,7 +82,7 @@ Newest first.
 - **For a game:** a llama-server is stopped as before, Ollama's models are unloaded (no restart needed), and LM
   Studio is never stopped: the card asks you to unload its model.
 - **"What's going on?"** replaces the Explain button, and it is hidden when there is no local LLM instead of
-  greyed out.
+  grayed out.
 - **Explain links** on every card and, under the mouse, on each "Using it now" row ask about that one thing.
 - **Follow-ups:** a box under the answer continues the conversation. The readings go with the first question;
   a long conversation sends the first message and the last 8.
@@ -241,10 +248,10 @@ See [SECURITY.md](SECURITY.md).
 ## 2026-10-22: first public version
 
 Lighthouse is a CPU and GPU monitor for the Windows taskbar. This first version has:
-- **The taskbar icon:** two live bars, CPU and GPU, coloured by temperature, plus a lamp that blinks after a
+- **The taskbar icon:** two live bars, CPU and GPU, colored by temperature, plus a lamp that blinks after a
   warning.
 - **The flyout:**
-  - an animated harbour scene;
+  - an animated harbor scene;
   - a one-line headline;
   - four gauges (CPU, GPU, RAM, VRAM);
   - "Using it now", whose rows add up exactly to the gauges' totals, with a legend for its four groups (AI,
