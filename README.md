@@ -11,22 +11,17 @@ something runs too hot, memory fills up, or a program keeps working hard in the 
 
 You need Windows 11 (64-bit) and admin rights once.
 
-1. Get the code: on GitHub, **Code > Download ZIP** and unzip it, or `git clone https://github.com/silkeesmooth/lighthouse`.
-2. Open PowerShell in that folder (the one with this README in it) and run:
+1. On this page, click **Code > Download ZIP**, then unzip it.
+2. In the unzipped folder, double-click **Install**. If Windows warns that the file came from the internet, choose
+   **Run** (or **More info > Run anyway**).
+3. Click **Yes** when Windows asks for admin rights.
 
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File tools\install.ps1
-   ```
+That's it. Install gets the .NET 10 SDK if you don't have it, builds Lighthouse, and sets it up to start with
+Windows. The first time takes a few minutes. Admin rights are needed once because CPU temperatures come from a
+signed driver (PawnIO), and Lighthouse installs into Program Files so no other program can swap it out.
+[docs/SECURITY.md](docs/SECURITY.md) explains what runs as admin and why.
 
-3. Click **Yes** on the Windows prompt.
-
-That's it. The script installs the .NET 10 SDK if you don't have it, builds Lighthouse, and sets it up to start
-with Windows. Admin rights are needed once because CPU temperatures come from a signed driver (PawnIO), and
-Lighthouse installs into Program Files so no other program can swap it out. [SECURITY.md](SECURITY.md) explains
-what runs as admin and why.
-
-**To update,** get the new code (`git pull`, or download the ZIP again), then run
-`powershell -ExecutionPolicy Bypass -File tools\update.ps1` from the same folder and click **Yes**.
+**To update,** download the new ZIP, unzip it, and double-click **Install** again.
 
 ## What you get
 
@@ -48,7 +43,7 @@ what runs as admin and why.
 ## Settings and more
 
 Settings are in a file: tray menu > **Settings file**. Every setting, how each feature works, the diagnostics and
-the build commands are in [docs/reference.md](docs/reference.md). [CHANGELOG.md](CHANGELOG.md) lists what changed
+the build commands are in [docs/reference.md](docs/reference.md). [docs/CHANGELOG.md](docs/CHANGELOG.md) lists what changed
 and when.
 
 ## License

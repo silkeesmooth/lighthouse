@@ -120,8 +120,8 @@ public class RulesTests
     public void The_example_settings_file_parses_and_its_jobs_match()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (!Directory.Exists(Path.Combine(dir.FullName, "examples"))) dir = dir.Parent!;
-        string json = File.ReadAllText(Path.Combine(dir.FullName, "examples", "settings.example.json"));
+        while (!File.Exists(Path.Combine(dir.FullName, "docs", "settings.example.json"))) dir = dir.Parent!;
+        string json = File.ReadAllText(Path.Combine(dir.FullName, "docs", "settings.example.json"));
         var settings = System.Text.Json.JsonSerializer.Deserialize<Settings>(json, Settings.JsonOptions)!;
         var jobs = settings.Jobs;
         Assert.Equal(["task \\VendorUpdate", "HKLM Run \"Contoso RGB\"", "Contoso.Updater notifications"],

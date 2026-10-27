@@ -233,7 +233,7 @@ public sealed class TrayIcon : IDisposable
         bool? enabled = ScheduledTasks.IsEnabled(TaskFolder, TaskName);
         _startupItem.Checked = enabled == true;
         _startupItem.Enabled = enabled is not null;
-        if (enabled is null) _startupItem.Text = "Start with Windows (run tools\\setup-admin.ps1)";
+        if (enabled is null) _startupItem.Text = "Start with Windows (run Install.cmd)";
     }
 
     private void TogglePause()

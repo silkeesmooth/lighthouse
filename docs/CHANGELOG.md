@@ -8,9 +8,12 @@ Newest first.
   with a × to close it, instead of pushing the panel down. Growing the window moved it up a frame after drawing it,
   so the legend's text flashed in the wrong place and the panel jumped; now the window keeps its size.
 - **US spelling** in everything you read: color, gray, harbor, recognized.
+- **A tidier top folder:** just the README, the license and **Install.cmd**, which installs Lighthouse or updates
+  it, with one UAC prompt either way. The code, tests and scripts moved to `source/`; the changelog, security notes
+  and example settings to `docs/`.
 - **A one-command install,** `tools\install.ps1`: installs the .NET 10 SDK with winget if it's missing, builds,
   then runs `setup-admin.ps1` behind one UAC prompt. The README is now short, with the install first; every detail
-  it had moved, unchanged, to [docs/reference.md](docs/reference.md).
+  it had moved, unchanged, to [reference.md](reference.md).
 
 ## 2026-10-23: the mini gets out of the way of fullscreen video
 

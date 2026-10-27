@@ -6,7 +6,7 @@ Everything about Lighthouse in detail. The [README](../README.md) has the short 
 
 It starts at logon in two parts: the app, with your own rights, and a small sensor helper that runs as admin,
 because CPU temperatures need the PawnIO driver. The helper has no window and writes no files; it only answers the
-app (see [SECURITY.md](../SECURITY.md)). It runs on Windows only: its window, sensors and per-program tracing all
+app (see [SECURITY.md](SECURITY.md)). It runs on Windows only: its window, sensors and per-program tracing all
 use Windows' own interfaces, so there is no Mac or Linux version.
 
 ## The panel
@@ -153,7 +153,7 @@ by default and costs about 0.2% of a 16-core CPU while shown.
   A failing check's card has a **Don't show again** button; its × only hides it until the check passes.
 - **Startup apps.** Lighthouse can keep other apps' startup entries off, for example vendor tools and their
   monitoring pop-ups that updates keep switching back on. List them under `autostartOff`, then run
-  `tools\autostart.ps1 -Disable` as admin (below). It asks first, and saves the list where only administrators
+  `source\tools\autostart.ps1 -Disable` as admin (below). It asks first, and saves the list where only administrators
   can change it. Nothing else is ever touched, and Windows' own entries are refused.
 - **Your week.** On Mondays a card sums up the past week: gaming time, temperature peaks, job runs and failures,
   internet speed, alerts. It stays for two days or until closed, and goes into History too.
@@ -174,14 +174,14 @@ by default and costs about 0.2% of a 16-core CPU while shown.
 
 Settings live in `%LOCALAPPDATA%\Lighthouse\settings.json` (tray menu > Settings file). After a hand edit, run
 `Lighthouse.exe --reload`. To load a file of settings, `Lighthouse.exe --import <file>` copies every setting the
-file names into settings.json, keeps the rest, and reloads. [examples/settings.example.json](../examples/settings.example.json)
+file names into settings.json, keeps the rest, and reloads. [settings.example.json](settings.example.json)
 shows the list settings (`jobs`, `workloadNames`, `autostartOff`):
 
 | Setting | What it does |
 |---|---|
 | `jobs` | Scripts and servers to watch (above). |
 | `workloadNames` | Your own names: a process whose file name or path contains `match` gets `label`. |
-| `autostartOff` | Startup entries you want off. Kinds: `run` (a Run-key value; `hive` HKLM or HKCU), `task` (a scheduled task; `path` is its folder), `toast` (an app's notifications), `cmdpal` (a PowerToys Command Palette extension, `tools\autostart.ps1` only). Lighthouse keeps off only what `tools\autostart.ps1 -Disable` saved from this list. |
+| `autostartOff` | Startup entries you want off. Kinds: `run` (a Run-key value; `hive` HKLM or HKCU), `task` (a scheduled task; `path` is its folder), `toast` (an app's notifications), `cmdpal` (a PowerToys Command Palette extension, `source\tools\autostart.ps1` only). Lighthouse keeps off only what `source\tools\autostart.ps1 -Disable` saved from this list. |
 | `thresholds` | The alert limits, in °C, %, minutes and GB. |
 | `llmStartDirectory` | The folder the local LLM's start command changes to. |
 | `lmStudioPort` | LM Studio's server port, when it isn't 1234. |
@@ -200,12 +200,12 @@ shows the list settings (`jobs`, `workloadNames`, `autostartOff`):
 | `miniFavorite` | Where the mini opens and goes back to: `bottom-right` (default), `bottom`, `bottom-left`, `left`, `top-left`, `top`, `top-right`, `right`, or `custom` for `miniLeft` and `miniTop`. The Favorite spot menu sets it. |
 | `dismissedHealth` | Health checks you dismissed. Remove an id to bring it back. |
 
-Keep your own settings in a file outside the repository (`state\` is ignored by git) and `--import` it after a
+Keep your own settings in a file outside the repository (`source\state\` is ignored by git) and `--import` it after a
 fresh install.
 
 ## Build and tests
 
-`tools\install.ps1` runs these for you. To run them by hand, from the repository folder:
+`Install.cmd` runs these for you. To run them by hand, from the `source` folder:
 
 ```powershell
 dotnet test
@@ -221,7 +221,7 @@ dotnet publish src\Lighthouse\Lighthouse.csproj -c Release -r win-x64 --self-con
 Start-Process powershell -Verb RunAs -WorkingDirectory (Get-Location) -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','tools\setup-admin.ps1'
 ```
 
-`setup-admin.ps1` is the only elevated step, and it logs to `state\setup-<time>.log`. It:
+`setup-admin.ps1` is the only elevated step, and it logs to `source\state\setup-<time>.log`. It:
 1. installs PawnIO (winget `namazso.PawnIO`), the signed driver LibreHardwareMonitor uses for CPU, RAM and SSD
    sensors;
 2. copies the exe and its DLLs to `%ProgramFiles%\Lighthouse`, where only administrators can write;
@@ -231,16 +231,16 @@ Start-Process powershell -Verb RunAs -WorkingDirectory (Get-Location) -ArgumentL
 4. offers to switch off the startup entries listed under `autostartOff`, if any;
 5. starts Lighthouse.
 
-`tools\update.ps1` installs a new build over an installed Lighthouse: it builds as you, then asks for admin rights
+`source\tools\update.ps1` installs a new build over an installed Lighthouse: it builds as you, then asks for admin rights
 once to copy it in (`-NoBuild` installs what is already in `publish`). Run it from your own PowerShell, for the
 same reason as below.
 
 ## Startup apps
 
-`tools\autostart.ps1` works on the `autostartOff` list (`-SettingsFile <file>` reads it from another file):
+`source\tools\autostart.ps1` works on the `autostartOff` list (`-SettingsFile <file>` reads it from another file):
 - `-List` shows each entry's state;
 - `-Disable` shows the list and asks, then switches them off and records the original state in
-  `state\autostart-before.json`. It also saves the list in `HKLM\SOFTWARE\Lighthouse`, the only list the
+  `source\state\autostart-before.json`. It also saves the list in `HKLM\SOFTWARE\Lighthouse`, the only list the
   running Lighthouse keeps off (`-Yes` skips the question);
 - `-Restore` puts everything back, clears the saved list and creates
   `%LOCALAPPDATA%\Lighthouse\autostart-guard-off`, so the guard stops.

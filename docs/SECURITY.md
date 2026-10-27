@@ -26,7 +26,7 @@ program may have:
   command line, since those can carry other people's secrets.
 - **Stopping a running `llama-server.exe`**, for the "Stop local LLM" card during a game. It stops nothing else.
 - **The startup guard**: it keeps off only the list an administrator saved in `HKLM\SOFTWARE\Lighthouse` (written
-  by `tools\autostart.ps1 -Disable`, which asks first), and never Windows' own entries (tasks under `\Microsoft\`,
+  by `source\tools\autostart.ps1 -Disable`, which asks first), and never Windows' own entries (tasks under `\Microsoft\`,
   Windows Security's Run values, Windows notifications).
 
 The app checks that the process serving the pipe is this same `Lighthouse.exe` before it uses an answer, and the
