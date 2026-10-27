@@ -57,7 +57,7 @@ by default and costs about 0.2% of a 16-core CPU while shown.
 - **Clicks go through the mini monitor** (tray menu): clicks reach the window behind it. It's in the tray menu
   because the mini can't be right-clicked while it's on.
 
-<p align="center"><img src="images/mini-layouts.png" width="744" alt="The mini monitor's four layouts over a wallpaper: lighthouse and gauges, a strip, the lighthouse only, the gauges only"></p>
+<p align="center"><img src="images/mini-monitor.png" width="744" alt="The mini monitor's four layouts over a wallpaper: lighthouse and gauges, a strip, the lighthouse only, the gauges only"></p>
 
 ## What it watches
 

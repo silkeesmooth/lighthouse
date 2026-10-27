@@ -27,7 +27,7 @@ signed driver (PawnIO), and Lighthouse installs into Program Files so no other p
 
 <p align="center"><img src="docs/images/flyout-light.png" width="400" alt="The flyout: the scene, the headline, four gauges, what is using the PC by load, a watched job's card with its usual time, and a speed test result"></p>
 
-<p align="center"><img src="docs/images/mini-layouts.png" width="744" alt="The mini monitor's four layouts over a wallpaper: lighthouse and gauges, a strip, the lighthouse only, the gauges only"></p>
+<p align="center"><img src="docs/images/mini-monitor.png" width="744" alt="The mini monitor's four layouts over a wallpaper: lighthouse and gauges, a strip, the lighthouse only, the gauges only"></p>
 
 - **The panel:** an animated harbor scene (its **?** explains each part), four gauges for CPU, GPU, RAM and
   VRAM (click one for its history), and what is using the PC right now.

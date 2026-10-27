@@ -66,7 +66,7 @@ internal static class ReadmeImages
         var mini = new MiniWindow(vm, engine, () => { }, () => { });
         ShowScene(mini.Scene, vm.Scene, Evening, 2.5);
         Settle(); // the gauges are list items, built on a later pass
-        MiniLayouts(mini, engine, Path.Combine(dir, "mini-layouts.png"));
+        MiniLayouts(mini, engine, Path.Combine(dir, "mini-monitor.png"));
         Scenes(Path.Combine(dir, "scenes.png"));
         AnimatedScene(Path.Combine(dir, "scene.png"));
     }
