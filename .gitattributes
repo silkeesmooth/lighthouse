@@ -1,0 +1,2 @@
+# Batch files need Windows line endings, in the repo and in GitHub's ZIP download.
+*.cmd text eol=crlf
