@@ -9,17 +9,24 @@ something runs too hot, memory fills up, or a program keeps working hard in the 
 
 ## Install
 
-You need Windows 11 (64-bit) and admin rights once.
+You need Windows 11 (64-bit) and admin rights on the PC.
 
 1. On this page, click **Code > Download ZIP**, then unzip it.
 2. In the unzipped folder, double-click **Install**. If Windows warns that the file came from the internet, choose
    **Run** (or **More info > Run anyway**).
 3. Click **Yes** when Windows asks for admin rights.
 
-That's it. Install gets the .NET 10 SDK if you don't have it, builds Lighthouse, and sets it up to start with
-Windows. The first time takes a few minutes. Admin rights are needed once because CPU temperatures come from a
-signed driver (PawnIO), and Lighthouse installs into Program Files so no other program can swap it out.
-[docs/SECURITY.md](docs/SECURITY.md) explains what runs as admin and why.
+That's it. Install does three things for you:
+
+- downloads the .NET 10 SDK, if your PC doesn't have it (Lighthouse is built with it);
+- builds Lighthouse;
+- sets Lighthouse to start with Windows.
+
+The first install takes a few minutes.
+
+**Why admin rights?** Lighthouse reads CPU temperatures through a signed driver called PawnIO, which needs admin
+rights to install. Lighthouse also installs into Program Files, a folder only administrators can change, so no other
+program can tamper with it. [docs/SECURITY.md](docs/SECURITY.md) has the details.
 
 **To update,** download the new ZIP, unzip it, and double-click **Install** again.
 
