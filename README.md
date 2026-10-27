@@ -45,7 +45,8 @@ program can tamper with it. [docs/SECURITY.md](docs/SECURITY.md) has the details
 - **Local LLM:** if llama-server, Ollama or LM Studio is running, **What's going on?** asks it to explain the
   last few minutes.
 - **Speed test, History and Your week:** speed tests, 90 days of readings, and a Monday summary.
-- **Dark mode** is an option too.
+- **Dark mode:** Lighthouse matches your Windows light or dark theme. To choose for yourself, use the Dark mode
+  switch at the bottom of the panel.
 
 ## Settings and more
 
