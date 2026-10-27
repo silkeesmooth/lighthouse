@@ -2,8 +2,10 @@
 
 <p align="center"><img src="docs/images/scene.png" width="394" alt="The flyout's harbor scene at dusk: the beam turns, a backup job sails past as a boat, a game is a ship, gulls fly in with a download"></p>
 
-A CPU and GPU monitor for the Windows 11 taskbar. Two live bars (CPU left, GPU right) fill with load and turn
-from gray to amber to red as each chip heats up. Click them for the full panel, right-click for the menu.
+Lighthouse shows how hard your PC is working, right on the Windows 11 taskbar. Two small bars show how busy the
+processor (CPU) and graphics card (GPU) are, and change from gray to amber to red as they heat up. Click them to see
+which programs are using your PC, how warm it's running, and how it has done over time. It also warns you when
+something runs too hot, memory fills up, or a program keeps working hard in the background.
 
 ## Install
 
@@ -28,10 +30,9 @@ what runs as admin and why.
 
 ## What you get
 
-<p align="center">
-  <img src="docs/images/flyout-light.png" width="400" align="top" alt="The flyout: the scene, the headline, four gauges, what is using the PC by load, a watched job's card with its usual time, and a speed test result">
-  <img src="docs/images/flyout-io-light.png" width="400" align="top" alt="The Disk &amp; network view: each program's disk, download and upload, with the same cards">
-</p>
+<p align="center"><img src="docs/images/flyout-light.png" width="400" alt="The flyout: the scene, the headline, four gauges, what is using the PC by load, a watched job's card with its usual time, and a speed test result"></p>
+
+<p align="center"><img src="docs/images/mini-layouts.png" width="744" alt="The mini monitor's four layouts over a wallpaper: lighthouse and gauges, a strip, the lighthouse only, the gauges only"></p>
 
 - **The panel:** an animated harbor scene (its **?** explains each part), four gauges for CPU, GPU, RAM and
   VRAM (click one for its history), and what is using the PC right now.
@@ -42,16 +43,7 @@ what runs as admin and why.
 - **Local LLM:** if llama-server, Ollama or LM Studio is running, **What's going on?** asks it to explain the
   last few minutes.
 - **Speed test, History and Your week:** speed tests, 90 days of readings, and a Monday summary.
-- **Dark mode:** follows Windows until you flip the switch.
-
-<details>
-<summary><b>Dark mode and the mini monitor</b></summary>
-<p align="center">
-  <img src="docs/images/flyout-dark.png" width="400" align="top" alt="The flyout in dark mode">
-  <img src="docs/images/flyout-io-dark.png" width="400" align="top" alt="The Disk &amp; network view in dark mode">
-</p>
-<p align="center"><img src="docs/images/mini-layouts.png" width="744" alt="The mini monitor's four layouts over a wallpaper: lighthouse and gauges, a strip, the lighthouse only, the gauges only"></p>
-</details>
+- **Dark mode** is an option too.
 
 ## Settings and more
 
