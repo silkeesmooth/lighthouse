@@ -60,7 +60,7 @@ internal static class ReadmeImages
             vm.SpeedCloseCommand.Execute(null);
         }
 
-        Theme.Apply(light: true);
+        Theme.Apply(light: false); // the mini sits on a dark desktop in its picture
         vm.ShowView(io: false);
         vm.Update(demo);
         var mini = new MiniWindow(vm, engine, () => { }, () => { });
@@ -116,13 +116,18 @@ internal static class ReadmeImages
         scene.InvalidateVisual();
     }
 
-    /// <summary>The four layouts over a wallpaper that runs from dark to light, each with its text coloured for its spot.</summary>
+    /// <summary>
+    /// The four layouts in a 2 × 2 grid of equal tiles, each centered on the same desktop wallpaper (a dark bloom, so
+    /// the see-through panel reads cleanly) and captioned with its name from the Layout menu. The picture's own
+    /// background is see-through, with captions in a gray that reads on GitHub's light and dark pages.
+    /// </summary>
     private static void MiniLayouts(MiniWindow mini, MonitorEngine engine, string path)
     {
-        const double gap = 28;
-        string[][] rows = [["full", "strip"], ["lighthouse", "numbers"]];
+        (string Layout, string Caption)[] layouts =
+            [("full", "Lighthouse and gauges"), ("strip", "Strip"), ("lighthouse", "Lighthouse only"), ("numbers", "Gauges only")];
+        const double pad = 28, gap = 20, radius = 14, captionGap = 8, captionHeight = 22;
         var sizes = new Dictionary<string, Size>();
-        foreach (string layout in rows.SelectMany(r => r))
+        foreach (var (layout, _) in layouts)
         {
             engine.Settings.MiniLayout = layout;
             mini.ApplyLayout();
@@ -131,39 +136,51 @@ internal static class ReadmeImages
             var panel = (FrameworkElement)mini.Content;
             sizes[layout] = new Size(Math.Ceiling(panel.ActualWidth), Math.Ceiling(panel.ActualHeight));
         }
-        double width = rows.Max(r => r.Sum(l => sizes[l].Width) + gap * (r.Length - 1)) + 2 * gap;
-        double height = rows.Sum(r => r.Max(l => sizes[l].Height)) + gap * (rows.Length + 1);
-        var wallpaper = Draw(width, height, dc =>
+        double tileW = sizes.Values.Max(s => s.Width) + 2 * pad, tileH = sizes.Values.Max(s => s.Height) + 2 * pad;
+        double cellH = tileH + captionGap + captionHeight;
+        double width = 2 * tileW + gap, height = 2 * cellH + gap;
+
+        // One tile of wallpaper, drawn once and used under every layout so the four tiles match.
+        var wallpaper = Draw(tileW, tileH, dc =>
         {
-            var sky = new LinearGradientBrush(new GradientStopCollection
-            {
-                new(Color.FromRgb(15, 28, 46), 0), new(Color.FromRgb(61, 90, 128), 0.5), new(Color.FromRgb(224, 231, 238), 1),
-            }, new Point(0, 0.3), new Point(1, 0.7));
-            dc.DrawRectangle(sky, null, new Rect(0, 0, width, height));
-            var glow = new RadialGradientBrush(Color.FromArgb(90, 241, 227, 143), Color.FromArgb(0, 241, 227, 143));
-            dc.DrawEllipse(glow, null, new Point(width * 0.62, height * 0.2), width * 0.3, height * 0.5);
+            dc.DrawRectangle(new LinearGradientBrush(Color.FromRgb(12, 24, 46), Color.FromRgb(24, 52, 82), 60), null,
+                new Rect(0, 0, tileW, tileH));
+            void Bloom(Color c, byte alpha, double cx, double cy, double rx, double ry) =>
+                dc.DrawEllipse(new RadialGradientBrush(Color.FromArgb(alpha, c.R, c.G, c.B), Color.FromArgb(0, c.R, c.G, c.B)),
+                    null, new Point(tileW * cx, tileH * cy), tileW * rx, tileH * ry);
+            Bloom(Color.FromRgb(43, 179, 166), 120, 0.15, 0.95, 0.55, 0.75);  // teal, lower left
+            Bloom(Color.FromRgb(123, 92, 196), 110, 0.9, 0.1, 0.55, 0.8);     // violet, upper right
+            Bloom(Color.FromRgb(241, 227, 143), 40, 0.55, 0.45, 0.35, 0.5);   // a little lamplight in the middle
         });
-        var placed = new List<(BitmapSource Image, Rect At)>();
-        double y = gap;
-        foreach (var row in rows)
+
+        var font = new Typeface((FontFamily)Application.Current.FindResource("UiFont"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
+        var caption = new SolidColorBrush(Color.FromRgb(0x76, 0x7F, 0x8A));
+        var tiles = new List<(BitmapSource Mini, Point Tile, Point At, string Caption)>();
+        for (int i = 0; i < layouts.Length; i++)
         {
-            double x = gap;
-            foreach (string layout in row)
-            {
-                engine.Settings.MiniLayout = layout;
-                mini.ApplyLayout();
-                Settle();
-                var at = new Rect(new Point(x, y), sizes[layout]);
-                placed.Add((mini.RenderOver((w, h, _, _) => new CroppedBitmap(wallpaper,
-                    new Int32Rect((int)(at.X * Sharp / 96), (int)(at.Y * Sharp / 96), w, h)), Sharp), at));
-                x += sizes[layout].Width + gap;
-            }
-            y += row.Max(l => sizes[l].Height) + gap;
+            var (layout, text) = layouts[i];
+            engine.Settings.MiniLayout = layout;
+            mini.ApplyLayout();
+            Settle();
+            var size = sizes[layout];
+            var at = new Point(Math.Round((tileW - size.Width) / 2), Math.Round((tileH - size.Height) / 2)); // within the tile
+            var image = mini.RenderOver((w, h, _, _) => new CroppedBitmap(wallpaper,
+                new Int32Rect((int)(at.X * Sharp / 96), (int)(at.Y * Sharp / 96), w, h)), Sharp);
+            tiles.Add((image, new Point(i % 2 * (tileW + gap), i / 2 * (cellH + gap)), at, text));
         }
         ImageExport.Write(Draw(width, height, dc =>
         {
-            dc.DrawImage(wallpaper, new Rect(0, 0, width, height));
-            foreach (var (image, at) in placed) dc.DrawImage(image, new Rect(at.X, at.Y, image.Width, image.Height));
+            foreach (var (image, tile, at, text) in tiles)
+            {
+                var box = new Rect(tile, new Size(tileW, tileH));
+                dc.PushClip(new RectangleGeometry(box, radius, radius));
+                dc.DrawImage(wallpaper, box);
+                dc.DrawImage(image, new Rect(tile.X + at.X, tile.Y + at.Y, image.Width, image.Height));
+                dc.Pop();
+                var label = new FormattedText(text, System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+                    font, 13, caption, Sharp / 96);
+                dc.DrawText(label, new Point(tile.X + (tileW - label.Width) / 2, tile.Y + tileH + captionGap));
+            }
         }), path);
     }
 
