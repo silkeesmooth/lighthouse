@@ -32,19 +32,21 @@ program can tamper with it. [docs/SECURITY.md](docs/SECURITY.md) has the details
 
 ## What you get
 
-<p align="center"><img src="docs/images/flyout-light.png" width="400" alt="The flyout: the scene, the headline, four gauges, what is using the PC by load, a watched job's card with its usual time, and a speed test result"></p>
+<p align="center"><img src="docs/images/panel-light.png" width="400" alt="The flyout: the scene, the headline, four gauges, what is using the PC by load, and a watched job's card with its usual time"></p>
 
 <p align="center"><img src="docs/images/mini-monitor.png" width="744" alt="The mini monitor's four layouts over a wallpaper: lighthouse and gauges, a strip, the lighthouse only, the gauges only"></p>
 
 - **The panel:** an animated harbor scene (its **?** explains each part), four gauges for CPU, GPU, RAM and
   VRAM (click one for its history), and what is using the PC right now.
-- **Mini monitor:** a small always-on-top version that moves out of the way of text and fullscreen video.
+- **Mini monitor:** a small always-on-top version that moves out of the way of text and fullscreen video, and
+  hides while the panel is open.
 - **Alerts and health checks:** heat, memory, runaway processes, RAM running below its rated speed, disk wear.
 - **Watched jobs:** your own scripts get a row, a boat in the scene, and a notice when they finish.
 - **Games:** only critical alerts while you play, and a summary when you stop.
 - **Local LLM:** if llama-server, Ollama or LM Studio is running, **What's going on?** asks it to explain the
   last few minutes.
-- **Speed test, History and Your week:** speed tests, 90 days of readings, and a Monday summary.
+- **Speed test, History and Your week:** speed tests (each shows your last three to compare), 90 days of
+  readings, and a Monday summary.
 - **Dark mode:** Lighthouse matches your Windows light or dark theme. To choose for yourself, use the Dark mode
   switch at the bottom of the panel.
 

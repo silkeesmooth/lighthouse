@@ -46,20 +46,16 @@ internal static class ReadmeImages
         {
             Theme.Apply(light);
             string theme = light ? "light" : "dark";
-            // The same cards in both views, so the two pictures are the same height side by side.
-            vm.ShowSpeedResult(new SpeedResult(14, 486, 47, 690_000_000, new ConnectionInfo("Ethernet", "Realtek PCIe 2.5GbE Family Controller", 2500)),
-                [new("Tue 9:12 PM", "478 Mbps down · 46 Mbps up · 15 ms"), new("Sun 8:40 AM", "491 Mbps down · 47 Mbps up · 13 ms"),
-                 new("2 Nov", "312 Mbps down · 45 Mbps up · 22 ms")]);
+            // No speed test open: it would cover "Using it now", which these pictures are for.
             vm.ShowView(io: false);
             vm.Update(demo);
             ShowScene(flyout.Scene, vm.Scene, Evening, 2.5);
             Settle();
-            ImageExport.Write(ImageExport.Render(flyout, flyout.Width, solidBackground: true, Sharp), Path.Combine(dir, $"flyout-{theme}.png"));
+            ImageExport.Write(ImageExport.Render(flyout, flyout.Width, solidBackground: true, Sharp), Path.Combine(dir, $"panel-{theme}.png"));
             vm.ShowView(io: true);
             vm.Update(demo);
             Settle();
-            ImageExport.Write(ImageExport.Render(flyout, flyout.Width, solidBackground: true, Sharp), Path.Combine(dir, $"flyout-io-{theme}.png"));
-            vm.SpeedCloseCommand.Execute(null);
+            ImageExport.Write(ImageExport.Render(flyout, flyout.Width, solidBackground: true, Sharp), Path.Combine(dir, $"panel-io-{theme}.png"));
         }
 
         Theme.Apply(light: false); // the mini sits on a dark desktop in its picture

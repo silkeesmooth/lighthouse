@@ -23,7 +23,8 @@ you get a one-line headline, four gauges (CPU, GPU, RAM, VRAM; click one for its
 machine right now. Cards under that (alerts, job runs, health checks, results) each have a × that closes them
 until Windows restarts, even if they go away and come back, or Lighthouse restarts for an update.
 
-- **What's in the scene:** the scene's **?** opens a legend of each part and what it shows right now.
+- **What's in the scene:** the scene's **?** opens a legend of each part and what it shows right now, over the
+  headline and gauges. It closes itself after 60 seconds.
 - **Dark mode:** the switch at the bottom of the flyout. Lighthouse follows Windows' app theme until you switch
   it, then keeps your choice (`theme` in the settings; `"system"` follows Windows again).
 
@@ -37,7 +38,7 @@ always-on-top version: the scene and four gauges, or one of the layouts below. I
 See-through background to change how much) and stays at that level under the mouse. The scene and gauges always stay
 solid, and each gauge's text is white or black for whatever is behind it. To read what's behind it, the mini
 leaves itself out of screen captures, so it won't appear in screenshots or screen shares. Drag it to move
-it for now (it snaps to a screen edge dropped near one), double-click it for the full panel, right-click for its menu. It's off
+it for now (it snaps to a screen edge dropped near one), double-click it for the full panel, right-click for its menu. It hides while the full panel is open and comes back when the panel closes. It's off
 by default and costs about 0.2% of a 16-core CPU while shown.
 
 - **Favorite spot** (right-click > Favorite spot): a corner or the middle of an edge of the main screen, or "Where
@@ -65,7 +66,8 @@ by default and costs about 0.2% of a 16-core CPU while shown.
   RAM, VRAM), with "Everything else" taking the remainder. GPU is the exception: its gauge is the GPU's busiest
   engine, which rows can't add up to, so "Everything else" shows "—" for it. A program's helpers count as the program: the Chrome
   a script drives counts as that script. The dot before each row says which group it is in, and the legend
-  under the list names them:
+  under the list names them. There are always six program rows, blank when fewer programs are busy, so the
+  panel keeps its size as programs come and go:
   - **AI** (teal): Claude Code, one row per project folder ("Claude Code · lighthouse (2)" for two sessions), the
     Claude app, a local LLM (llama-server, counting its memory-mapped model as its RAM; Ollama; LM Studio), Codex,
     ChatGPT, Copilot;
@@ -119,11 +121,13 @@ by default and costs about 0.2% of a 16-core CPU while shown.
   usually much less.
   - While it runs, the scene shows it. Ping rings leave the lamp. For download, gold light comes in from a beacon
     on the far shore; for upload, coral light goes out to it. A faster line sends more light, faster.
-  - The panel shows the three numbers as they come in, then the connection: Wi-Fi or Ethernet, the adapter and
-    its link speed.
+  - The panel opens over "Using it now", so the flyout keeps its size. It shows the three numbers as they come
+    in, then the connection: Wi-Fi or Ethernet, the adapter and its link speed, then your last three tests from
+    History to compare with.
+  - Ping waits up to 5 seconds a try and 15 in all. If Cloudflare doesn't answer in that time, the panel says so.
   - If something else on the PC was already downloading or uploading, the result says so, because the test only
     gets what is left.
-  - Its × stops a test under way or closes the result.
+  - Its × stops a test under way or closes the result. A result closes itself after 60 seconds.
   - Each result goes into History's Speed tests list and chart. With `internetPlan` set, results say how much of
     the plan you got.
   - Optional daily test (`dailySpeedTest`, off by default). It runs once a day after its time, but only when you've
@@ -188,7 +192,7 @@ shows the list settings (`jobs`, `workloadNames`, `autostartOff`):
 | `quietInGames` | Only critical alerts toast during a game (default true). |
 | `usingView` | "Using it now" by `load` or by `io` (disk and network); the flyout's switch sets it. |
 | `theme` | `system` (follow Windows), `light` or `dark`; the flyout's Dark mode switch sets it. |
-| `sceneLegend` | The scene's legend is open (its **?** sets it). |
+| `sceneLegend` | The scene's legend is open (its **?** sets it; it closes itself after 60 seconds). |
 | `internetPlan` | `{ "downMbps": 500, "upMbps": 50 }`: speed tests say how much of it you got. |
 | `dailySpeedTest` | A daily speed test after this time, such as `"03:30"`, when you're away. Off by default. |
 | `jobToastMinSeconds`, `gameSummaryMinMinutes` | Shorter runs and games are logged without a toast. |
