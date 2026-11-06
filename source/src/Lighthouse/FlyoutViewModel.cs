@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using Lighthouse.Controls;
 using Lighthouse.Core;
 using Lighthouse.Core.Llm;
@@ -92,9 +93,17 @@ public sealed record ExplainTurnVm(string Question, string Answer)
 /// <summary>One of the speed panel's three numbers: "412" "Mbps" "download", in the colour of its state.</summary>
 public sealed record SpeedStatVm(string Value, string Unit, string Label, Brush Ink);
 
-/// <summary>The speed test panel: what it is doing, three numbers, a progress bar while it runs, the line it used.</summary>
-public sealed record SpeedPanelVm(string Status, IReadOnlyList<SpeedStatVm> Stats, double Progress, string Detail, string? Note)
+/// <summary>One of the earlier tests under the speed panel's numbers: when, then down · up · ping.</summary>
+public sealed record SpeedEarlierVm(string When, string Line);
+
+/// <summary>
+/// The speed test panel: what it is doing, three numbers, a progress bar while it runs, the line it used, and the
+/// last few tests before this one to compare with.
+/// </summary>
+public sealed record SpeedPanelVm(string Status, IReadOnlyList<SpeedStatVm> Stats, double Progress, string Detail, string? Note,
+    IReadOnlyList<SpeedEarlierVm> Earlier)
 {
+    public Visibility EarlierEmptyVisibility => Earlier.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     public Visibility ProgressVisibility => Progress is > 0 and < 1 ? Visibility.Visible : Visibility.Collapsed;
     public Visibility DetailVisibility => Detail.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
     public Visibility NoteVisibility => Note is null ? Visibility.Collapsed : Visibility.Visible;
@@ -116,6 +125,7 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
     private int _explainRun;
     private string _followUp = "";
     private SpeedPanelVm? _speed;
+    private IReadOnlyList<SpeedEarlierVm> _speedEarlier = [];
     private bool _speedTesting;
     private int _speedRun;
     private CancellationTokenSource? _speedCts;
@@ -132,17 +142,23 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
 
     private readonly Action<bool> _setMini;
 
+    /// <summary>The scene's legend and a finished speed test close themselves after this long.</summary>
+    private static readonly TimeSpan AutoClose = TimeSpan.FromSeconds(60);
+    private readonly DispatcherTimer _legendTimer = new() { Interval = AutoClose }, _speedTimer = new() { Interval = AutoClose };
+
     public FlyoutViewModel(MonitorEngine engine, Action<bool> setMini)
     {
         _engine = engine;
         _setMini = setMini;
         _closedCards = new ClosedCards(ClosedCards.Restore(engine.Settings.ClosedCards, engine.Settings.ClosedCardsBoot, Boot));
-        SceneLegendCommand = new RelayCommand(() =>
+        SceneLegendCommand = new RelayCommand(() => SetLegend(!_engine.Settings.SceneLegend));
+        _legendTimer.Tick += (_, _) => SetLegend(false);
+        _speedTimer.Tick += (_, _) =>
         {
-            _engine.Settings.SceneLegend = !_engine.Settings.SceneLegend;
-            _engine.SaveSettings();
-            Raise(nameof(SceneLegendVisibility));
-        });
+            _speedTimer.Stop();
+            if (!_speedTesting && _speed is not null) CloseSpeed();
+        };
+        if (_engine.Settings.SceneLegend) _legendTimer.Start(); // left open last time
         Tiles = [_cpu, _gpu, _ram, _vram];
         foreach (var tile in Tiles) tile.Open = new RelayCommand(() => ShowHistory(tile.Label, TimeSpan.FromHours(1)));
         HistoryBackCommand = new RelayCommand(ShowMain);
@@ -202,7 +218,8 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
     public string Head3 => IoView ? "Down\nMbps" : "RAM GB";
     public string Head4 => IoView ? "Up\nMbps" : "VRAM";
     public string IoNote { get; private set; } = "";
-    public Visibility IoNoteVisibility => IoView && IoNote.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+    /// <summary>Shown in Disk &amp; network, and holding its space in Load, so switching views keeps the panel's size.</summary>
+    public Visibility IoNoteVisibility => IoNote.Length == 0 ? Visibility.Collapsed : IoView ? Visibility.Visible : Visibility.Hidden;
     public IReadOnlyList<CardVm> Cards { get; private set; } = [];
     public string SelfLine { get; private set; } = "";
     public string PauseText { get; private set; } = "Pause alerts";
@@ -258,6 +275,17 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
     }
 
     // The scene's legend: what each part of the scene shows, with its reading now. Opened with the scene's "?".
+    /// <summary>Opens or closes the scene's legend (the ?), remembered; open, it closes itself after <see cref="AutoClose"/>.</summary>
+    private void SetLegend(bool on)
+    {
+        _legendTimer.Stop();
+        if (on) _legendTimer.Start();
+        if (_engine.Settings.SceneLegend == on) return;
+        _engine.Settings.SceneLegend = on;
+        _engine.SaveSettings();
+        Raise(nameof(SceneLegendVisibility));
+    }
+
     public Visibility SceneLegendVisibility => _engine.Settings.SceneLegend ? Visibility.Visible : Visibility.Collapsed;
     public ICommand SceneLegendCommand { get; }
     public IReadOnlyList<LegendItemVm> SceneLegend { get; private set; } = [];
@@ -518,10 +546,23 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
         Raise(string.Empty);
     }
 
+    /// <summary>An empty line holding a row's place, so the table keeps its height.</summary>
+    private static readonly RowVm BlankRow = new("", "", "", "", "", null!, FontWeights.Normal, Brushes.Transparent);
+
+    /// <summary>
+    /// Fills the program rows up to <see cref="Aggregator.TopCount"/> with blank lines: the table is always the same
+    /// height, and "Everything else" and "Total" stay put as programs come and go.
+    /// </summary>
+    private static void PadRows(List<RowVm> rows)
+    {
+        while (rows.Count < Aggregator.TopCount) rows.Add(BlankRow);
+    }
+
     private List<RowVm> LoadRows(Snapshot s)
     {
         var rows = s.Workloads.Select(w => Row(w, LoadColumns(w)) with { Explain = ExplainRow(w) }).ToList();
-        if (s.Rest is { } rest) rows.Add(Row(rest, LoadColumns(rest)) with { Badge = Brushes.Transparent, Ring = Brushes.Transparent, Tip = rest.Note ?? "" });
+        PadRows(rows);
+        rows.Add(s.Rest is { } rest ? Row(rest, LoadColumns(rest)) with { Badge = Brushes.Transparent, Ring = Brushes.Transparent, Tip = rest.Note ?? "" } : BlankRow);
         rows.Add(new RowVm("Total", $"{s.CpuLoad:0.0}%", $"{s.GpuLoad:0}%", $"{s.RamUsedGb:0.0}", $"{s.VramUsedGb:0.0}",
             "The tiles' totals. The rows above add up to these.", FontWeights.SemiBold, Brushes.Transparent));
         return rows;
@@ -531,8 +572,10 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
     private List<RowVm> IoRows(Snapshot s)
     {
         var rows = s.IoWorkloads.Select(w => Row(w, IoColumns(w, s.IoTraced)) with { Explain = ExplainRow(w) }).ToList();
-        if (s.IoRest is { } rest)
-            rows.Add(Row(rest, IoColumns(rest, true)) with { Badge = Brushes.Transparent, Ring = Brushes.Transparent, Tip = rest.Note ?? "" });
+        PadRows(rows);
+        rows.Add(s.IoRest is { } rest
+            ? Row(rest, IoColumns(rest, true)) with { Badge = Brushes.Transparent, Ring = Brushes.Transparent, Tip = rest.Note ?? "" }
+            : BlankRow);
         double down = s.NetDownBytesPerSec * 8 / 1e6, up = s.NetUpBytesPerSec * 8 / 1e6;
         rows.Add(new RowVm("Total", $"{s.CpuLoad:0.0}%", Rate(s.DiskMBps, zero: "0"), Rate(down, zero: "0"), Rate(up, zero: "0"),
             "Every program's disk reads and writes, and what the network adapters moved. The rows above add up to these.",
@@ -813,8 +856,10 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
     {
         int run = ++_speedRun;
         _speedTesting = true;
+        _speedTimer.Stop();
         _ping = _down = _up = null;
         _speedPhase = null;
+        _speedEarlier = EarlierSpeedTests(DateTime.Now);
         OnSpeedProgress(new SpeedProgress("Ping", null));
         // Progress made here reports on the UI thread.
         var progress = new Progress<SpeedProgress>(p =>
@@ -851,6 +896,7 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
             _speed = SpeedPanel(outcome.Error ?? "The speed test failed.", progressDone: 1, "", null);
             _signal = null;
         }
+        _speedTimer.Start(); // the result closes itself after AutoClose
         Raise(string.Empty);
     }
 
@@ -902,13 +948,36 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
             Rate("Download", _down, "download"),
             Rate("Upload", _up, "upload"),
             _ping is { } ping ? new($"{ping:0}", "ms", "ping", Ink("Ping", ping)) : new("—", "ms", "ping", Ink("Ping", null)),
-        ], progressDone, detail, note);
+        ], progressDone, detail, note, _speedEarlier);
+    }
+
+    /// <summary>How many earlier tests the panel lists: as many as fit in the space "Using it now" leaves it.</summary>
+    private const int EarlierShown = 3;
+
+    /// <summary>The tests before <paramref name="before"/>, newest first, from History.</summary>
+    private IReadOnlyList<SpeedEarlierVm> EarlierSpeedTests(DateTime before)
+    {
+        try
+        {
+            var now = DateTime.Now;
+            return Enumerable.Reverse(_engine.History.SpeedTests(now.AddDays(-365)).Where(t => t.Time < before).TakeLast(EarlierShown).ToList())
+                .Select(t => new SpeedEarlierVm(
+                    t.Time.Date == now.Date ? $"today {t.Time:t}" : now - t.Time < TimeSpan.FromDays(6) ? $"{t.Time:ddd} {t.Time:t}" : $"{t.Time:d MMM}",
+                    $"{SpeedTest.Format(t.DownMbps)} down · {SpeedTest.Format(t.UpMbps)} up · {t.PingMs:0}{Nb}ms"))
+                .ToList();
+        }
+        catch (Exception e)
+        {
+            Log.Write($"earlier speed tests unavailable: {e.Message}");
+            return [];
+        }
     }
 
     /// <summary>The speed panel's ×: stops a test under way, or closes the result.</summary>
     private void CloseSpeed()
     {
         _speedRun++;
+        _speedTimer.Stop();
         _speedCts?.Cancel();
         _speed = null;
         _signal = null;
@@ -924,9 +993,10 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
     }
 
     /// <summary>For --text-check and previews: show a finished result.</summary>
-    internal void ShowSpeedResult(SpeedResult r)
+    internal void ShowSpeedResult(SpeedResult r, IReadOnlyList<SpeedEarlierVm>? earlier = null)
     {
         (_ping, _down, _up) = (r.PingMs, r.DownMbps, r.UpMbps);
+        _speedEarlier = earlier ?? EarlierSpeedTests(DateTime.Now);
         _speed = SpeedPanel($"Speed test · {DateTime.Now:t}", 1, WithPlan(r), r.BusyNote.Trim() is { Length: > 0 } n ? n : null);
         Raise(string.Empty);
     }

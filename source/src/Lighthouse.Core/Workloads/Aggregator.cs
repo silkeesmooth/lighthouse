@@ -38,8 +38,11 @@ public static class Aggregator
 {
     private const double Gb = 1024.0 * 1024 * 1024;
 
+    /// <summary>How many programs get a row of their own, by load and by disk and network.</summary>
+    public const int TopCount = 6;
+
     public static WorkloadTable Aggregate(IReadOnlyList<ProcessUsage> processes, double cpuTotalPct, double ramUsedGb,
-        double vramUsedGb, int topCount = 6, IoTotals? io = null)
+        double vramUsedGb, int topCount = TopCount, IoTotals? io = null)
     {
         double rawTotal = processes.Sum(p => p.CpuRaw);
 

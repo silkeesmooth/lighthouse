@@ -90,6 +90,9 @@
             </Border>
             </Grid>
 
+            <!-- The speed test covers this section exactly (Stretch), so opening it never resizes the window. -->
+            <Grid>
+            <StackPanel x:Name="UsingSection">
             <!-- "Using it now" by load, or by disk and network: a two-way switch on the title line. -->
             <DockPanel Margin="0,14,0,2">
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
@@ -106,11 +109,14 @@
                     <ColumnDefinition Width="50" />
                     <ColumnDefinition Width="46" />
                 </Grid.ColumnDefinitions>
+                <!-- Two lines tall in both views, as the Disk & network headings are. -->
+                <TextBlock Grid.Column="1" Text="Disk&#x0a;MB/s" FontSize="11" Visibility="Hidden" />
                 <TextBlock Grid.Column="1" Text="CPU" TextAlignment="Right" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Bottom" />
                 <TextBlock Grid.Column="2" Text="{Binding Head2}" TextAlignment="Right" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Bottom" />
                 <TextBlock Grid.Column="3" Text="{Binding Head3}" TextAlignment="Right" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Bottom" />
                 <TextBlock Grid.Column="4" Text="{Binding Head4}" TextAlignment="Right" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Bottom" />
             </Grid>
+            <!-- Always the same number of rows: blank ones hold the places. -->
             <ItemsControl ItemsSource="{Binding Rows}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
@@ -184,7 +190,72 @@
                     <TextBlock Text="Apps and Windows" />
                 </StackPanel>
             </WrapPanel>
-
+            </StackPanel>
+            <!-- The speed test: three big numbers (the one being measured in the accent colour), a bar while it
+                 runs, then the line it went over. The scene shows the same test as light crossing the sea.
+                 It opens over "Using it now", like the legend over the gauges: pushing the rows down resized the window, which jumped. -->
+            <Border Background="{DynamicResource Surface}" CornerRadius="10" Padding="12,8,6,10" Margin="0,14,0,0"
+                    BorderBrush="{DynamicResource Line}" BorderThickness="1" Visibility="{Binding SpeedVisibility}">
+                <StackPanel>
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource Close}" Command="{Binding SpeedCloseCommand}"
+                                ToolTip="{Binding SpeedCloseTip}" VerticalAlignment="Top" />
+                        <TextBlock Text="{Binding Speed.Status}" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <ItemsControl ItemsSource="{Binding Speed.Stats}" Margin="0,4,6,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="3" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock TextWrapping="Wrap">
+                                        <Run Text="{Binding Value, Mode=OneWay}" FontFamily="{StaticResource DisplayFont}" FontSize="24"
+                                             FontWeight="SemiBold" Foreground="{Binding Ink, Mode=OneWay}" />
+                                        <Run Text="{Binding Unit, Mode=OneWay}" FontSize="11" Foreground="{DynamicResource Muted}" />
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding Label}" FontSize="11" Foreground="{DynamicResource Muted}" Margin="0,-2,0,0" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Grid Height="3" Margin="0,9,6,1" Visibility="{Binding Speed.ProgressVisibility}">
+                        <Border Background="{DynamicResource Line}" CornerRadius="1.5" />
+                        <Border Background="{DynamicResource Accent}" CornerRadius="1.5" RenderTransformOrigin="0,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform ScaleX="{Binding Speed.Progress}" />
+                            </Border.RenderTransform>
+                        </Border>
+                    </Grid>
+                    <TextBlock Text="{Binding Speed.Detail}" Visibility="{Binding Speed.DetailVisibility}" FontSize="11"
+                               Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,8,6,0" />
+                    <DockPanel Visibility="{Binding Speed.NoteVisibility}" Margin="0,6,6,0">
+                        <Ellipse DockPanel.Dock="Left" Width="6" Height="6" Fill="{DynamicResource Warn}" Margin="0,5,6,0" VerticalAlignment="Top" />
+                        <TextBlock Text="{Binding Speed.Note}" FontSize="11" TextWrapping="Wrap" />
+                    </DockPanel>
+                    <!-- The last few tests before this one, to compare with. -->
+                    <TextBlock Text="Earlier tests" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" Margin="0,12,6,2" />
+                    <TextBlock Text="None yet. Each test you run is kept in History." Visibility="{Binding Speed.EarlierEmptyVisibility}"
+                               FontSize="11" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,0,6,0" />
+                    <ItemsControl ItemsSource="{Binding Speed.Earlier}" Margin="0,0,6,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="96" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding When}" FontSize="11" Foreground="{DynamicResource Muted}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Line}" FontSize="11" TextWrapping="Wrap" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+            </Grid>
             <ItemsControl ItemsSource="{Binding Cards}" Margin="0,10,0,0">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
@@ -243,52 +314,6 @@
                         </DockPanel>
                     </StackPanel>
                 </DockPanel>
-            </Border>
-
-            <!-- The speed test: three big numbers (the one being measured in the accent colour), a bar while it
-                 runs, then the line it went over. The scene shows the same test as light crossing the sea. -->
-            <Border Background="{DynamicResource Surface}" CornerRadius="10" Padding="12,8,6,10" Margin="0,8,0,0"
-                    Visibility="{Binding SpeedVisibility}">
-                <StackPanel>
-                    <DockPanel>
-                        <Button DockPanel.Dock="Right" Style="{StaticResource Close}" Command="{Binding SpeedCloseCommand}"
-                                ToolTip="{Binding SpeedCloseTip}" VerticalAlignment="Top" />
-                        <TextBlock Text="{Binding Speed.Status}" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center" />
-                    </DockPanel>
-                    <ItemsControl ItemsSource="{Binding Speed.Stats}" Margin="0,4,6,0">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <UniformGrid Columns="3" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel>
-                                    <TextBlock TextWrapping="Wrap">
-                                        <Run Text="{Binding Value, Mode=OneWay}" FontFamily="{StaticResource DisplayFont}" FontSize="24"
-                                             FontWeight="SemiBold" Foreground="{Binding Ink, Mode=OneWay}" />
-                                        <Run Text="{Binding Unit, Mode=OneWay}" FontSize="11" Foreground="{DynamicResource Muted}" />
-                                    </TextBlock>
-                                    <TextBlock Text="{Binding Label}" FontSize="11" Foreground="{DynamicResource Muted}" Margin="0,-2,0,0" />
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                    <Grid Height="3" Margin="0,9,6,1" Visibility="{Binding Speed.ProgressVisibility}">
-                        <Border Background="{DynamicResource Line}" CornerRadius="1.5" />
-                        <Border Background="{DynamicResource Accent}" CornerRadius="1.5" RenderTransformOrigin="0,0.5">
-                            <Border.RenderTransform>
-                                <ScaleTransform ScaleX="{Binding Speed.Progress}" />
-                            </Border.RenderTransform>
-                        </Border>
-                    </Grid>
-                    <TextBlock Text="{Binding Speed.Detail}" Visibility="{Binding Speed.DetailVisibility}" FontSize="11"
-                               Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,8,6,0" />
-                    <DockPanel Visibility="{Binding Speed.NoteVisibility}" Margin="0,6,6,0">
-                        <Ellipse DockPanel.Dock="Left" Width="6" Height="6" Fill="{DynamicResource Warn}" Margin="0,5,6,0" VerticalAlignment="Top" />
-                        <TextBlock Text="{Binding Speed.Note}" FontSize="11" TextWrapping="Wrap" />
-                    </DockPanel>
-                </StackPanel>
             </Border>
 
             <!-- Wraps rather than running off the edge when "Resume alerts" or "Testing…" changes the widths. -->

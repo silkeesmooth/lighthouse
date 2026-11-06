@@ -179,17 +179,45 @@ public static class SpeedTest
     /// <summary>Megabits a second from bytes over a span, 0 for an empty span.</summary>
     public static double Mbps(long bytes, TimeSpan span) => span.TotalSeconds <= 0 ? 0 : bytes * 8 / span.TotalSeconds / 1e6;
 
+    /// <summary>How long one ping may take, and the whole ping step: the web client itself never gives up.</summary>
+    private static readonly TimeSpan PingWait = TimeSpan.FromSeconds(5), PingPhase = TimeSpan.FromSeconds(15);
+
+    /// <summary>
+    /// The middle of five round trips, after one that opens the connection. A server that stalls (Cloudflare answering
+    /// slowly after many tests) used to leave the test on "Measuring ping…" for good: each try now waits
+    /// <see cref="PingWait"/>, and the step gives up after <see cref="PingPhase"/> with whatever it has.
+    /// </summary>
     private static async Task<double> PingAsync(CancellationToken ct)
     {
         var times = new List<double>();
-        for (int i = 0; i < 6; i++)
+        var phase = Stopwatch.StartNew();
+        bool connected = false;
+        while (times.Count < 5 && phase.Elapsed < PingPhase)
         {
+            using var wait = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            wait.CancelAfter(PingWait);
             var sw = Stopwatch.StartNew();
-            using var response = await Http.GetAsync($"{Endpoint}/__down?bytes=0", HttpCompletionOption.ResponseHeadersRead, ct);
-            response.EnsureSuccessStatusCode();
-            if (i == 0) Trace?.Invoke($"first answer (proxy lookup, connect, TLS, request): {sw.ElapsedMilliseconds} ms");
-            if (i > 0) times.Add(sw.Elapsed.TotalMilliseconds); // the first one pays for the connection and TLS
+            try
+            {
+                using var response = await Http.GetAsync($"{Endpoint}/__down?bytes=0", HttpCompletionOption.ResponseHeadersRead, wait.Token);
+                response.EnsureSuccessStatusCode();
+            }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+            {
+                Trace?.Invoke($"ping: no answer within {PingWait.TotalSeconds:0} s");
+                connected = false; // the next try may need a fresh connection
+                continue;
+            }
+            if (!connected)
+            {
+                Trace?.Invoke($"first answer (proxy lookup, connect, TLS, request): {sw.ElapsedMilliseconds} ms");
+                connected = true; // that one paid for the connection and TLS
+                continue;
+            }
+            times.Add(sw.Elapsed.TotalMilliseconds);
         }
+        if (times.Count == 0)
+            throw new HttpRequestException($"it didn't answer within {PingPhase.TotalSeconds:0} seconds. It may be busy: try again in a few minutes.");
         times.Sort();
         return times[times.Count / 2];
     }

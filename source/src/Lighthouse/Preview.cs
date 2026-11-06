@@ -171,7 +171,8 @@ internal static class Preview
         worst = worst with { IoWorkloads = worst.Workloads, IoRest = worst.Rest, AllWorkloads = worst.Workloads };
         vm.Update(worst);
         vm.ShowSpeedResult(new Core.Network.SpeedResult(999, 9999, 9999, 699_000_000,
-            new("Wi-Fi", "Intel(R) Wi-Fi 7 BE202 320MHz Wireless Network Adapter", 5764)) { BackgroundDownMbps = 900, BackgroundUpMbps = 900 });
+            new("Wi-Fi", "Intel(R) Wi-Fi 7 BE202 320MHz Wireless Network Adapter", 5764)) { BackgroundDownMbps = 900, BackgroundUpMbps = 900 },
+            [.. Enumerable.Repeat(new SpeedEarlierVm("Wed 12:59 PM", "9999 Mbps down · 9999 Mbps up · 999 ms"), 3)]);
         var flyout = new FlyoutWindow(vm);
         var mini = new MiniWindow(vm, engine, () => { }, () => { });
         if (vm.Scene is { } scene)

@@ -2,6 +2,22 @@
 
 Newest first.
 
+## 2026-11-05: a panel that keeps its size, a ping that can't hang
+
+- **The mini steps aside while the flyout is open,** and comes back where it was when the flyout closes. A mini
+  switched on from the flyout's toggle appears once the flyout closes.
+- **"Using it now" keeps one height.** It always has six program rows (blank ones hold the places), so
+  "Everything else" and "Total" stay put as programs come and go, instead of the panel resizing every second.
+  Load and Disk & network are the same height too: the headings take two lines in both, and the sensor helper
+  note holds its space in Load. A name that wraps can make the section taller, but it doesn't shrink back while
+  the flyout is open.
+- **The speed test opens over "Using it now"** instead of pushing the panel down, which made it jump. Under the
+  numbers it lists your last three tests from History, to compare with.
+- **The scene legend and a finished speed test close themselves after 60 seconds.**
+- **The panel grows upward in one step:** its top edge moves as its size changes, so the bottom stays put.
+- **Ping can't hang the speed test.** Each try waits up to 5 seconds and the step up to 15, then it uses what it
+  has, or says speed.cloudflare.com didn't answer. Before, a stalled answer left it on "Measuring ping…".
+
 ## 2026-10-27: the scene legend opens without a flash, US spelling
 
 - **The scene legend opens as its own card** over the headline and the four gauges, titled "What's in the scene"

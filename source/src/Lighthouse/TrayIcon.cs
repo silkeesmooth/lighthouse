@@ -108,7 +108,9 @@ public sealed class TrayIcon : IDisposable
         {
             _mini ??= new MiniWindow(_vm, _engine, () => ShowFlyout(), () => SetMini(false));
             if (_engine.Latest is { } s) Refresh(s);
-            _mini.ShowAtFavorite();
+            // Switched on from the flyout's toggle: it appears when the flyout closes.
+            if (_flyout is { IsVisible: true }) _mini.HideForFlyout(placeAtFavorite: true);
+            else _mini.ShowAtFavorite();
         }
         else
         {
@@ -175,8 +177,13 @@ public sealed class TrayIcon : IDisposable
         if (_flyout is null)
         {
             _flyout = new FlyoutWindow(_vm);
-            _flyout.Hidden += () => _flyoutHiddenAt = DateTime.Now;
+            _flyout.Hidden += () =>
+            {
+                _flyoutHiddenAt = DateTime.Now;
+                _mini?.ShowAfterFlyout();
+            };
         }
+        _mini?.HideForFlyout(); // the flyout shows everything the mini does
         _engine.ReloadSettings();
         if (_engine.Latest is { } s) Refresh(s);
         if (history) _vm.ShowHistory();

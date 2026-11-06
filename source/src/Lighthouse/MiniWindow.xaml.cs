@@ -523,6 +523,37 @@ public partial class MiniWindow : Window
 
     // --- placement -------------------------------------------------------------------------------------
 
+    private bool _heldForFlyout, _placeAfterFlyout;
+
+    /// <summary>
+    /// Steps aside while the flyout is open. A mini already away for fullscreen video stays as it is; one switched
+    /// on while the flyout is open (<paramref name="placeAtFavorite"/>) opens at its favorite spot once it closes.
+    /// </summary>
+    public void HideForFlyout(bool placeAtFavorite = false)
+    {
+        if (placeAtFavorite) _placeAfterFlyout = true;
+        _heldForFlyout = placeAtFavorite || IsVisible;
+        if (!_heldForFlyout) return;
+        _fullscreenTimer.Stop(); // or it could show the mini again over the flyout
+        Hide();
+    }
+
+    /// <summary>Back where it was when the flyout opened.</summary>
+    public void ShowAfterFlyout()
+    {
+        bool held = _heldForFlyout, place = _placeAfterFlyout;
+        _heldForFlyout = _placeAfterFlyout = false;
+        if (!held || !_engine.Settings.MiniMonitor) return; // switched off while the flyout was open
+        if (place)
+        {
+            ShowAtFavorite();
+            return;
+        }
+        Show();
+        SampleBackdrop();
+        _fullscreenTimer.Start();
+    }
+
     /// <summary>Opens at its favorite spot.</summary>
     public void ShowAtFavorite()
     {
