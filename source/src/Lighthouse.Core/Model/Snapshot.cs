@@ -96,6 +96,18 @@ public sealed record Snapshot
     public CcdState Ccd { get; init; }
     /// <summary>CPU, RAM and SSD sensors are readable: the sensor helper answers (or the app is admin itself).</summary>
     public bool FullSensors { get; init; }
+    /// <summary>Why those sensors can't be read ("the sensor helper isn't running"); null when they can.</summary>
+    public string? SensorError { get; init; }
+
+    /// <summary>
+    /// The graphics card whose driver stopped, with its Device Manager code; null while it works. GPU load and VRAM then
+    /// read 0 because nothing can be read, not because nothing runs.
+    /// </summary>
+    public Sensors.DisplayAdapter? GpuStopped { get; init; }
+    /// <summary>False when Windows gave no CPU load figure, so <see cref="CpuLoad"/>'s 0 is not a reading.</summary>
+    public bool CpuLoadRead { get; init; } = true;
+    /// <summary>False when Windows listed nothing for the main GPU, so <see cref="GpuLoad"/>'s 0 is not a reading.</summary>
+    public bool GpuLoadRead { get; init; } = true;
 
     /// <summary>The top rows shown in the flyout.</summary>
     public IReadOnlyList<WorkloadUsage> Workloads { get; init; } = [];

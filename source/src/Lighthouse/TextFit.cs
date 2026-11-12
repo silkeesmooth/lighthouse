@@ -25,11 +25,28 @@ internal static class TextFit
                 : block.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Max(word => Width(block, word));
             if (needed > room + 0.5)
                 problems.Add($"'{block.Text}' needs {needed:0} px, has {room:0}");
+            // Text that won't fit gets its full width anyway and is clipped to the space its parent gave it, or its parent
+            // is, so the block alone looks fine (2026-11-12: "Driver stopped" in a gauge tile and under the mini's gauge).
+            if (NarrowerSlot(block, root) is { } slot)
+                problems.Add($"'{block.Text}' needs {slot.Needed:0} px, has {slot.Has:0}");
             var bounds = block.TransformToAncestor(root).TransformBounds(new Rect(block.RenderSize));
             if (bounds.Right > root.ActualWidth + 0.5 || bounds.Left < -0.5)
                 problems.Add($"'{block.Text}' runs past the window edge");
         }
         return problems;
+    }
+
+    /// <summary>The block or a parent of it that is wider than the slot it was laid out in, or null.</summary>
+    private static (double Needed, double Has)? NarrowerSlot(FrameworkElement block, FrameworkElement root)
+    {
+        for (DependencyObject? e = block; e is not null && e != root; e = VisualTreeHelper.GetParent(e))
+        {
+            if (e is not FrameworkElement { IsArrangeValid: true } element || element is ScrollContentPresenter) continue;
+            double slot = System.Windows.Controls.Primitives.LayoutInformation.GetLayoutSlot(element).Width;
+            double width = element.RenderSize.Width + element.Margin.Left + element.Margin.Right;
+            if (slot > 0 && width > slot + 0.5) return (width, slot);
+        }
+        return null;
     }
 
     private static double Width(TextBlock block, string text) =>

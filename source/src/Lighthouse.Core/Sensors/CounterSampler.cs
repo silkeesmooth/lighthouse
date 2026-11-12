@@ -15,7 +15,10 @@ public sealed record CounterReading(
     double DiskActivePct,
     double NetDownBytesPerSec,
     double NetUpBytesPerSec,
-    double CommitPct);
+    double CommitPct,
+    // False when Windows gave no CPU figure, or listed no engine of the main GPU: the 0 above is then not a reading.
+    bool CpuRead = true,
+    bool GpuRead = true);
 
 /// <summary>Everything Lighthouse reads from PDH, in one query collected once per tick.</summary>
 public sealed partial class CounterSampler : IDisposable
@@ -55,10 +58,12 @@ public sealed partial class CounterSampler : IDisposable
 
         var engineByPid = new Dictionary<int, Dictionary<int, double>>();
         var engineTotals = new Dictionary<int, double>();
+        bool gpuSeen = false;
         foreach (var (instance, value) in _gpuEngine?.Array() ?? [])
         {
             var m = EngineInstance().Match(instance);
             if (!m.Success || !IsMainGpu(m.Groups["luid"].Value)) continue;
+            gpuSeen = true; // every process drawing on the GPU (the desktop always does) lists its engines, even at 0%
             int pid = int.Parse(m.Groups["pid"].Value, CultureInfo.InvariantCulture);
             int engine = int.Parse(m.Groups["eng"].Value, CultureInfo.InvariantCulture);
             if (!engineByPid.TryGetValue(pid, out var engines)) engineByPid[pid] = engines = [];
@@ -83,8 +88,9 @@ public sealed partial class CounterSampler : IDisposable
         foreach (var (instance, value) in _gpuAdapterMem?.Array() ?? [])
             if (IsMainGpu(instance)) vramUsed += value;
 
+        double? cpuUtility = _cpu?.Value();
         return new CounterReading(
-            CpuUtility: Math.Clamp(_cpu?.Value() ?? 0, 0, 100),
+            CpuUtility: Math.Clamp(cpuUtility ?? 0, 0, 100),
             Parked: parked,
             // Task Manager's GPU figure: the busiest engine.
             GpuLoad: Math.Clamp(engineTotals.Count == 0 ? 0 : engineTotals.Values.Max(), 0, 100),
@@ -93,7 +99,9 @@ public sealed partial class CounterSampler : IDisposable
             DiskActivePct: Math.Clamp(100 - (_diskIdle?.Value() ?? 100), 0, 100),
             NetDownBytesPerSec: (_netDown?.Array() ?? []).Sum(x => x.Value),
             NetUpBytesPerSec: (_netUp?.Array() ?? []).Sum(x => x.Value),
-            CommitPct: _commit?.Value() ?? 0);
+            CommitPct: _commit?.Value() ?? 0,
+            CpuRead: cpuUtility is not null,
+            GpuRead: gpuSeen);
     }
 
     private bool IsMainGpu(string text) => _luid is null || text.Contains(_luid, StringComparison.OrdinalIgnoreCase);

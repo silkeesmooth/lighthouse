@@ -11,6 +11,10 @@ public static class Headline
         if (active.Where(a => a.Severity >= Severity.Warning).MaxBy(a => a.Severity) is { } alert)
             return alert.Message;
 
+        // Before a game's line, which would read "GPU 0%".
+        if (s.GpuStopped is { } card)
+            return $"The {card.Name} driver stopped (Device Manager code {card.Problem}). GPU and VRAM can't be read.";
+
         if (s.Game is { } game)
         {
             string temp = s.GpuTemp is { } t ? $", {t:0}°C" : "";

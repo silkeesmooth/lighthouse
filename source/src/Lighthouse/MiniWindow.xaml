@@ -63,7 +63,7 @@
                                      Stroke="{Binding Arc}" Track="{Binding Track}" Foreground="{Binding Text}" />
                             <TextBlock Text="{Binding Tile.Label}" FontSize="10" FontWeight="SemiBold" Foreground="{Binding Text}"
                                        Opacity="0.75" HorizontalAlignment="Center" Margin="0,3,0,0" />
-                            <TextBlock Text="{Binding Tile.Main}" FontSize="11.5" FontWeight="SemiBold" Foreground="{Binding Text}"
+                            <TextBlock Text="{Binding Tile.Short}" FontSize="11.5" FontWeight="SemiBold" Foreground="{Binding Text}"
                                        HorizontalAlignment="Center" />
                         </StackPanel>
                     </DataTemplate>

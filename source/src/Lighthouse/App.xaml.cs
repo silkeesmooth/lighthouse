@@ -257,7 +257,9 @@ public partial class App : Application
         var topo = CpuTopology.Read();
         string text = $"dxgi: {gpu?.Name} {gpu?.VramGb:0.0} GB {gpu?.PdhLuid}{Environment.NewLine}" +
                       $"ccds: {string.Join(" | ", topo.Ccds.Select(c => $"#{c.Index} L3 {c.L3Bytes >> 20} MB cpus {c.Processors.First()}-{c.Processors.Last()}"))}" +
-                      $" cache={topo.CacheCcd?.Index}{Environment.NewLine}" + hw.Dump();
+                      $" cache={topo.CacheCcd?.Index}{Environment.NewLine}" +
+                      $"adapters: {string.Join(" | ", DisplayAdapters.List().Select(a => $"{a.Name} code {a.Problem}"))}" +
+                      $" stopped={DisplayAdapters.Stopped(DisplayAdapters.List(), gpu)?.Name ?? "none"}{Environment.NewLine}" + hw.Dump();
         File.WriteAllText(path, text);
     }
 

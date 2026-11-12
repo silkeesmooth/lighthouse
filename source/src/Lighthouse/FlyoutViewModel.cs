@@ -25,6 +25,8 @@ public sealed class TileVm(string label) : INotifyPropertyChanged
     public string GaugeText { get; private set; } = "";
     public string Main { get; private set; } = "";
     public string Detail { get; private set; } = "";
+    /// <summary>The line under the mini monitor's gauge.</summary>
+    public string Short { get; private set; } = "";
     public IReadOnlyList<double> Spark { get; private set; } = [];
     public double SparkMax { get; private set; } = 100;
     public Brush Accent { get; private set; } = Brushes.Gray;
@@ -34,16 +36,17 @@ public sealed class TileVm(string label) : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public void Set(double fraction, string main, string detail, IReadOnlyList<double> spark, double sparkMax, string accentKey)
+    public void Set(GaugeFace face, IReadOnlyList<double> spark, double sparkMax)
     {
-        Fraction = Math.Clamp(fraction, 0, 1);
-        GaugeText = $"{Fraction * 100:0}%";
-        Main = main;
-        Detail = detail;
+        Fraction = Math.Clamp(face.Fraction, 0, 1);
+        GaugeText = face.Ring;
+        Main = face.Main;
+        Detail = face.Detail;
+        Short = face.Short;
         Spark = spark;
         SparkMax = sparkMax;
-        AccentKey = accentKey;
-        Accent = Theme.Brush(accentKey);
+        AccentKey = face.Accent;
+        Accent = Theme.Brush(face.Accent);
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
     }
 }
@@ -495,17 +498,10 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
         var recent = _engine.Recent(TimeSpan.FromSeconds(60));
         Headline = Core.Headline.Build(s, _engine.ActiveAlerts, now);
 
-        _cpu.Set(s.CpuLoad / 100, Deg(s.CpuTemp) ?? "—",
-            Join(Watts(s.CpuPower), s.CpuClockMhz is { } mhz ? $"{mhz / 1000:0.0}{Nb}GHz" : null),
-            recent.Select(r => r.CpuLoad).ToList(), 100, HeatKey(TrayIconRenderer.CpuHeat(s.CpuTemp)));
-        _gpu.Set(s.GpuLoad / 100, Deg(s.GpuTemp) ?? "—",
-            Join(s.GpuHotspot is { } hs ? $"hotspot{Nb}{hs:0}°C" : null, Watts(s.GpuPower)),
-            recent.Select(r => r.GpuLoad).ToList(), 100, HeatKey(TrayIconRenderer.GpuHeat(s.GpuTemp, s.GpuHotspot)));
-        _ram.Set(s.RamTotalGb > 0 ? s.RamUsedGb / s.RamTotalGb : 0, $"{s.RamUsedGb:0.0}{Nb}GB",
-            Join($"of{Nb}{s.RamTotalGb:0}{Nb}GB", $"commit{Nb}{s.CommitPct:0}%"),
-            recent.Select(r => r.RamUsedGb).ToList(), s.RamTotalGb, "Accent");
-        _vram.Set(s.VramTotalGb > 0 ? s.VramUsedGb / s.VramTotalGb : 0, $"{s.VramUsedGb:0.0}{Nb}GB",
-            $"of{Nb}{s.VramTotalGb:0}{Nb}GB", recent.Select(r => r.VramUsedGb).ToList(), Math.Max(1, s.VramTotalGb), "Accent");
+        _cpu.Set(Gauges.Cpu(s), recent.Select(r => r.CpuLoad).ToList(), 100);
+        _gpu.Set(Gauges.Gpu(s), recent.Select(r => r.GpuLoad).ToList(), 100);
+        _ram.Set(Gauges.Ram(s), recent.Select(r => r.RamUsedGb).ToList(), s.RamTotalGb);
+        _vram.Set(Gauges.Vram(s), recent.Select(r => r.VramUsedGb).ToList(), Math.Max(1, s.VramTotalGb));
 
         Scene = new SceneState(
             s.CpuLoad,
@@ -539,7 +535,7 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
         if (_historyOpen && now - _historyChartBuilt >= TimeSpan.FromSeconds(10)) BuildHistoryChart(now);
         SelfLine = s.Self is { } self ? $"Lighthouse itself: {self.CpuPct:0.0}% CPU, {self.RamGb * 1024:0} MB." : "";
         Subline = Join(s.NvmeTemp is { } ssd ? $"SSD {ssd:0}°C" : null, s.DimmTemp is { } dimm ? $"RAM {dimm:0}°C" : null,
-            $"updated {now:T}", s.FullSensors ? null : "no CPU temperature: the sensor helper isn't running");
+            $"updated {now:T}", s.SensorError is { } sensors ? $"no CPU temperature: {sensors}" : null);
         if (Log.LastError is { } logError) Subline += $" · log failing: {logError}";
         bool paused = _engine.Settings.AlertsPausedUntil is { } until && until > now;
         PauseText = paused ? "Resume alerts" : "Pause alerts 1 h";
@@ -674,7 +670,7 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
                 CcdState.CacheParked => "V-Cache CCD parked (frequency mode).",
                 _ => "",
             };
-            string body = Join($"GPU{Nb}{s.GpuLoad:0}%", Deg(s.GpuTemp), s.GpuHotspot is { } h ? $"hotspot{Nb}{h:0}°C" : null,
+            string body = Join(Gauges.GpuLine(s, Nb), s.GpuHotspot is { } h && s.GpuStopped is null ? $"hotspot{Nb}{h:0}°C" : null,
                 Deg(s.CpuTemp) is { } c ? $"CPU {c}" : null) + ". " + ccd;
             if (_engine.BothCcdsActiveWarning)
                 body += " Game Bar may not have recognized it: AMD's driver only parks CCD1 for games it knows.";
@@ -1021,18 +1017,10 @@ public sealed class FlyoutViewModel : INotifyPropertyChanged
         Raise(nameof(PauseText));
     }
 
-    private static string HeatKey(Heat heat) => heat switch
-    {
-        Heat.Hot => "Hot",
-        Heat.Warm => "Warn",
-        _ => "Accent",
-    };
-
     private static string? Deg(double? v) => v is { } x ? $"{x:0}°C" : null;
     /// <summary>A non-breaking space: keeps a number with its unit ("335 W") when a line wraps.</summary>
     private const string Nb = "\u00A0";
 
-    private static string? Watts(double? v) => v is { } x ? $"{x:0}{Nb}W" : null;
     private static string Join(params string?[] parts) => string.Join(" · ", parts.Where(p => !string.IsNullOrEmpty(p)));
 
     private void Raise(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

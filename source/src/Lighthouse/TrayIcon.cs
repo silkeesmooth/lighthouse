@@ -140,7 +140,7 @@ public sealed class TrayIcon : IDisposable
     internal static string Tooltip(Snapshot s)
     {
         string cpu = s.CpuTemp is { } ct ? $"CPU {s.CpuLoad:0}% · {ct:0}°C" : $"CPU {s.CpuLoad:0}%";
-        string gpu = s.GpuTemp is { } gt ? $"GPU {s.GpuLoad:0}% · {gt:0}°C" : $"GPU {s.GpuLoad:0}%";
+        string gpu = Gauges.GpuLine(s);
         string mem = $"RAM {s.RamUsedGb:0}/{s.RamTotalGb:0} GB · VRAM {s.VramUsedGb:0}/{s.VramTotalGb:0} GB";
         string text = $"Lighthouse\n{cpu} | {gpu}\n{mem}";
         if (s.Game is { } game) text += $"\n{game.Label}";

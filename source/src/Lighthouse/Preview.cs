@@ -224,6 +224,28 @@ internal static class Preview
         problems.AddRange(TextFit.Clipped(flyout).Select(p => "flyout, history: " + p));
         ImageExport.Save(flyout, flyout.Width, Path.ChangeExtension(path, null) + "-history.png");
         vm.ShowMain();
+        vm.ExplainCloseCommand.Execute(null);
+        engine.Settings.SceneLegend = false; // it opens over the gauges
+        // Nothing readable: the GPU driver stopped, no sensor helper, and Windows giving no CPU load or memory figure.
+        // Each gauge says so in words, in the flyout and every mini layout.
+        vm.Update(worst with
+        {
+            CpuTemp = null, CpuPower = null, CpuClockMhz = null, CpuLoadRead = false,
+            SensorError = "the sensor pipe is held by C:\\Program Files\\Something Else\\helper.exe, not Lighthouse's sensor helper",
+            GpuTemp = null, GpuHotspot = null, GpuPower = null, GpuLoad = 0, VramUsedGb = 0, RamTotalGb = 0,
+            GpuStopped = new Core.Sensors.DisplayAdapter("NVIDIA GeForce RTX 5090 D v2 Founders Edition", 43),
+        });
+        ImageExport.Layout(flyout, flyout.Width);
+        problems.AddRange(TextFit.Clipped(flyout).Select(p => "flyout, nothing readable: " + p));
+        ImageExport.Save(flyout, flyout.Width, Path.ChangeExtension(path, null) + "-unreadable.png");
+        foreach (var layout in new[] { "full", "strip", "lighthouse", "numbers" })
+        {
+            engine.Settings.MiniLayout = layout;
+            mini.ApplyLayout();
+            ImageExport.Layout(mini, mini.LayoutWidth);
+            problems.AddRange(TextFit.Clipped(mini).Select(p => $"mini, {layout}, nothing readable: " + p));
+            ImageExport.Save(mini, mini.LayoutWidth, Path.ChangeExtension(path, null) + $"-unreadable-mini-{layout}.png");
+        }
         File.WriteAllText(path, problems.Count == 0 ? "nothing clipped" + Environment.NewLine : string.Join(Environment.NewLine, problems) + Environment.NewLine);
     }
 

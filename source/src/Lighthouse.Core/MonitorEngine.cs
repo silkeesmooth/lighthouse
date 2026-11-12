@@ -57,6 +57,8 @@ public sealed class MonitorEngine : IDisposable
     private DateTime _nextGuard = DateTime.Now.AddSeconds(30);
     private DateTime _nextPrune = DateTime.Now.AddMinutes(5);
     private DateTime _speedTestEnded = DateTime.MinValue;
+    private DateTime _nextAdapterCheck = DateTime.MinValue, _nextGpuSearch = DateTime.MinValue;
+    private DisplayAdapter? _gpuStopped;
 
     private readonly bool _diagnostic;
 
@@ -166,7 +168,10 @@ public sealed class MonitorEngine : IDisposable
     {
         if (_counters is null || _hardware is null || _processes is null) return;
         DateTime now = DateTime.Now;
+        CheckGpuDriver(now);
         var counters = _counters.Sample();
+        // A driver that comes back (or a reset that recovers) gives the card a new id, which the counters can't find.
+        if (!counters.GpuRead && _gpuStopped is null && now >= _nextGpuSearch) FindGpuAgain(now, "the GPU counters lost the card");
         var hw = _hardware.Sample();
         if (_hardware is SensorClient helper)
         {
@@ -228,6 +233,10 @@ public sealed class MonitorEngine : IDisposable
             NetUpBytesPerSec = counters.NetUpBytesPerSec,
             Ccd = topo.StateFrom(counters.Parked),
             FullSensors = _hardware.Full,
+            SensorError = _hardware.Full ? null : _hardware.Error ?? "the sensor helper isn't running",
+            GpuStopped = _gpuStopped,
+            CpuLoadRead = counters.CpuRead,
+            GpuLoadRead = counters.GpuRead,
             Workloads = table.Top,
             Rest = table.Rest,
             IoWorkloads = table.TopIo,
@@ -584,6 +593,35 @@ public sealed class MonitorEngine : IDisposable
         int cut = name.IndexOf(" with ", StringComparison.Ordinal);
         if (cut > 0) name = name[..cut];
         return System.Text.RegularExpressions.Regex.Replace(name, @"\s+\d+-Core Processor$", "").Trim();
+    }
+
+    /// <summary>Every 5 s: has the graphics driver stopped (a Device Manager error code), or come back?</summary>
+    private void CheckGpuDriver(DateTime now)
+    {
+        if (now < _nextAdapterCheck) return;
+        _nextAdapterCheck = now.AddSeconds(5);
+        var stopped = DisplayAdapters.Stopped(DisplayAdapters.List(), Machine.Gpu);
+        if (stopped == _gpuStopped) return;
+        if (stopped is not null)
+            Log.Write($"GPU driver stopped: {stopped.Name}, Device Manager code {stopped.Problem}");
+        else
+        {
+            Log.Write($"GPU driver back: {_gpuStopped!.Name}");
+            FindGpuAgain(now, "its driver came back");
+        }
+        _gpuStopped = stopped;
+    }
+
+    /// <summary>Picks the main GPU again and reads its counters, at most every 30 s.</summary>
+    private void FindGpuAgain(DateTime now, string why)
+    {
+        _nextGpuSearch = now.AddSeconds(30);
+        var gpu = Dxgi.MainAdapter();
+        if (gpu is null || gpu.PdhLuid == Machine.Gpu?.PdhLuid) return;
+        Log.Write($"GPU found again ({why}): {gpu.Name} luid={gpu.PdhLuid}");
+        _counters?.Dispose();
+        _counters = new CounterSampler(gpu);
+        Machine = Machine with { GpuName = ShortGpuName(gpu.Name), Gpu = gpu };
     }
 
     private static string ShortGpuName(string? name) =>
