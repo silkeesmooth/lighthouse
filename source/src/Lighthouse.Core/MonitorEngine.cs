@@ -126,7 +126,8 @@ public sealed class MonitorEngine : IDisposable
             var gpu = Dxgi.MainAdapter();
             _counters = new CounterSampler(gpu);
             // The sensors that need admin come from the sensor helper; only an app that is admin itself reads them here.
-            _hardware = UserContext.Elevated ? new LocalHardware(gpu?.Name) : new SensorClient(gpu?.Name);
+            _hardware = UserContext.Elevated ? new LocalHardware(gpu?.Name) : new SensorClient(gpu?.Name,
+                helperTask: LogonTasks.Mine + LogonTasks.Sensors);
             _processes = new ProcessMonitor(NewClassifier(Settings), _hardware is SensorClient client ? client.Details : null);
             if (Settings.Jobs.Count > 0) Log.Write($"watching jobs: {string.Join(", ", Settings.Jobs.Select(j => j.Name))}");
             Machine = Machine with { GpuName = ShortGpuName(gpu?.Name), Gpu = gpu };

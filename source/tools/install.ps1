@@ -14,8 +14,10 @@
 #>
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot -Parent
-$installed = (Test-Path (Join-Path $env:ProgramFiles 'Lighthouse\Lighthouse.exe')) -and
-    (Get-ScheduledTask -TaskPath '\Lighthouse\' -ErrorAction SilentlyContinue)
+. (Join-Path $PSScriptRoot 'logon-tasks.ps1')
+# Installed for this account: the files, and this account's own logon tasks. Another account's install leaves the
+# files but not this account's tasks, so that is a setup, not an update.
+$installed = (Test-Path (Join-Path $env:ProgramFiles 'Lighthouse\Lighthouse.exe')) -and (Test-LighthouseTasksFor $env:USERNAME)
 
 # 1. The .NET 10 SDK, which builds it.
 $hasSdk = (Get-Command dotnet -ErrorAction SilentlyContinue) -and ((dotnet --list-sdks) -match '^10\.')
@@ -38,10 +40,13 @@ dotnet publish (Join-Path $repo 'src\Lighthouse\Lighthouse.csproj') -c Release -
     -p:PublishSingleFile=true -o (Join-Path $repo 'publish') -nologo -v q
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed ($LASTEXITCODE)" }
 
-# 3. The one elevated step.
+# 3. The one elevated step, told whose tasks to set up: on a standard account it runs as the admin who approves it.
 'Setting up (approve the UAC prompt)...'
-$p = Start-Process powershell -Verb RunAs -Wait -PassThru -WorkingDirectory $repo `
-    -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$(Join-Path $PSScriptRoot 'setup-admin.ps1')`""
+$setupArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$(Join-Path $PSScriptRoot 'setup-admin.ps1')`"",
+    '-UserName', "`"$env:USERNAME`"", '-Account', "`"$env:USERDOMAIN\$env:USERNAME`"")
+if (-not (Test-LighthouseAdminAccount)) { $setupArgs += '-StandardAccount' }
+$p = Start-Process powershell -Verb RunAs -Wait -PassThru -WorkingDirectory $repo -ArgumentList $setupArgs
 if ($p.ExitCode -ne 0) { throw "Setup failed (exit $($p.ExitCode)). Its log is in $(Join-Path $repo 'state')." }
-$running = Get-Process Lighthouse -ErrorAction SilentlyContinue
+$session = (Get-Process -Id $PID).SessionId
+$running = Get-Process Lighthouse -ErrorAction SilentlyContinue | Where-Object { $_.SessionId -eq $session }
 "Lighthouse is installed; running: $(if ($running) { 'yes' } else { 'NO, see the log in state\' })"

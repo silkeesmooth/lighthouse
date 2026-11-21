@@ -229,9 +229,11 @@ Start-Process powershell -Verb RunAs -WorkingDirectory (Get-Location) -ArgumentL
 1. installs PawnIO (winget `namazso.PawnIO`), the signed driver LibreHardwareMonitor uses for CPU, RAM and SSD
    sensors;
 2. copies the exe and its DLLs to `%ProgramFiles%\Lighthouse`, where only administrators can write;
-3. registers two logon tasks: `\Lighthouse\Sensors` runs the sensor helper as admin (5 s after logon), and
-   `\Lighthouse\Start at logon` runs the app with your own rights (10 s after logon). Your account can start
-   either, which the app does when the helper isn't running, but only an administrator can change them;
+3. registers two logon tasks for your account, in `\Lighthouse\<your user name>\`: `Sensors` runs the sensor
+   helper as admin (5 s after logon), and `Start at logon` runs the app with your own rights (10 s after logon).
+   Your account can start either, which the app does when the helper isn't running, but only an administrator can
+   change them. Each Windows account that runs Install.cmd gets its own pair, and leaves the others' alone. A
+   standard account gets no `Sensors` task, so it shows no CPU, RAM or SSD sensors;
 4. offers to switch off the startup entries listed under `autostartOff`, if any;
 5. starts Lighthouse.
 
@@ -274,8 +276,8 @@ private copy of HKCU and AppData, so changes made there never reach Windows.
   would be cut off ("nothing clipped" is the pass). Run it after any layout change.
 - `Lighthouse.exe --dismiss <check id>` hides a health check for good, like the card's Don't show again.
 - `Lighthouse.exe --sensors` is the sensor helper; its logon task starts it. It exits 30 s after the app goes away.
-- `Lighthouse.exe --set-startup on|off` switches both logon tasks (needs admin; the tray menu's "Start with
-  Windows" runs it through a UAC prompt).
+- `Lighthouse.exe --set-startup on|off [user name]` switches both logon tasks of that account, by default your own
+  (needs admin; the tray menu's "Start with Windows" runs it through a UAC prompt).
 - `Lighthouse.exe --preview <dir>` draws the scene in 14 situations (storm, fog, gulls, speed test and more), plus
   the gauges and the tray icon zoomed in, as PNGs.
 - `Lighthouse.exe --readme-images docs\images` redraws this README's pictures from made-up demo data, so nothing

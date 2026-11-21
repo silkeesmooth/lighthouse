@@ -278,9 +278,13 @@ public sealed class LocalHardware(string? gpuName) : IHardwareSource
 /// server process), starts the helper's task when there is none, and falls back to the sensors this process can
 /// read itself while there is no helper.
 /// </summary>
-public sealed class SensorClient(string? gpuName, string? pipeName = null, string? helperTask = @"\Lighthouse\Sensors",
+public sealed class SensorClient(string? gpuName, string? pipeName = null, string? helperTask = null,
     bool readLocally = true) : IHardwareSource
 {
+    /// <summary>Why there's no helper when this account has no helper task (Install.cmd skips it on a standard account).</summary>
+    public const string StandardAccount = "CPU, RAM and SSD sensors need an admin account, and this is a standard account";
+    public const string NotInstalled = "the sensor helper isn't installed for this account; run Install.cmd";
+
     private readonly string _pipeName = pipeName ?? SensorProtocol.PipeName;
     private readonly object _gate = new();
     private readonly ConcurrentQueue<string> _notices = new(), _log = new();
@@ -289,7 +293,7 @@ public sealed class SensorClient(string? gpuName, string? pipeName = null, strin
     private StreamWriter? _writer;
     private DateTime _nextConnect = DateTime.MinValue, _nextStart = DateTime.MinValue;
     private LocalHardware? _fallback;
-    private string? _refusal;
+    private string? _refusal, _noTask;
 
     public string? Error { get; private set; }
     /// <summary>The helper's latest per-process disk and network rates; empty without its kernel tracing.</summary>
@@ -313,7 +317,7 @@ public sealed class SensorClient(string? gpuName, string? pipeName = null, strin
             return r.Reading ?? new HardwareReading();
         }
         // No helper: what this process can read with the user's own rights (the GPU's sensors).
-        Error = _refusal ?? "the sensor helper isn't running";
+        Error = _refusal ?? _noTask ?? "the sensor helper isn't running";
         Io = new Dictionary<int, ProcessIo>();
         IoError = Error;
         if (!readLocally) return new HardwareReading();
@@ -407,7 +411,17 @@ public sealed class SensorClient(string? gpuName, string? pipeName = null, strin
         try
         {
             int slash = helperTask.LastIndexOf('\\');
-            ScheduledTasks.Run(helperTask[..(slash + 1)], helperTask[(slash + 1)..]);
+            string folder = helperTask[..(slash + 1)], name = helperTask[(slash + 1)..];
+            if (ScheduledTasks.IsEnabled(folder, name) is null)
+            {
+                // Looked for again each minute, so an install while the app runs is picked up; logged once.
+                string why = UserContext.AdminAccount ? NotInstalled : StandardAccount;
+                if (_noTask != why) Log.Write($"no sensor helper task {helperTask}: {why}");
+                _noTask = why;
+                return;
+            }
+            _noTask = null;
+            ScheduledTasks.Run(folder, name);
         }
         catch (Exception e)
         {

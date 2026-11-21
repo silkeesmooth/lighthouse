@@ -6,9 +6,13 @@
 
 .DESCRIPTION
   Run `dotnet publish` first (see README); this copies publish\Lighthouse.exe and its DLLs into
-  %ProgramFiles%\Lighthouse. Two logon tasks start it: "\Lighthouse\Start at logon" runs the app with your own
-  rights, and "\Lighthouse\Sensors" runs its sensor helper (`Lighthouse.exe --sensors`) elevated, without a UAC
-  prompt, because CPU temperatures need the PawnIO driver.
+  %ProgramFiles%\Lighthouse. Two logon tasks start it, in a folder of their own for each account: "\Lighthouse\<user
+  name>\Start at logon" runs the app with your own rights, and "\Lighthouse\<user name>\Sensors" runs its sensor
+  helper (`Lighthouse.exe --sensors`) elevated, without a UAC prompt, because CPU temperatures need the PawnIO driver.
+  A standard account gets no Sensors task. Other accounts' tasks are left as they are.
+
+  -UserName, -Account and -StandardAccount name the account being set up. install.ps1 passes them, because on a
+  standard account this elevated copy runs as the admin who approved the UAC prompt. Left out: the account running it.
 
   Program Files, because only administrators can write there. An elevated task that starts a program from a
   folder you can write to is a way for any program you run to get admin rights: replace the exe, start the task.
@@ -16,7 +20,8 @@
 .EXAMPLE
   Start-Process powershell -Verb RunAs -WorkingDirectory (Get-Location) -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','tools\setup-admin.ps1'
 #>
-param([switch]$SkipPawnIO, [switch]$SkipAutostart)
+param([switch]$SkipPawnIO, [switch]$SkipAutostart, [string]$UserName = $env:USERNAME,
+      [string]$Account = "$env:USERDOMAIN\$env:USERNAME", [switch]$StandardAccount)
 
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot -Parent
@@ -25,6 +30,9 @@ New-Item -ItemType Directory -Force $stateDir | Out-Null
 $log = Join-Path $stateDir ('setup-{0:yyyyMMdd-HHmmss}.log' -f (Get-Date))
 Start-Transcript -Path $log | Out-Null
 $failed = $false
+. (Join-Path $PSScriptRoot 'logon-tasks.ps1')
+# Steps that read or write a profile (settings, old copies, the log) only when this copy runs as the account itself.
+$sameAccount = $UserName -eq $env:USERNAME
 
 try {
     $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
@@ -48,39 +56,24 @@ try {
     if (-not (Test-Path (Join-Path $publish 'Lighthouse.exe'))) { throw "No $publish\Lighthouse.exe. Run dotnet publish first." }
     $target = Join-Path $env:ProgramFiles 'Lighthouse'
     $exe = Join-Path $target 'Lighthouse.exe'
-    Get-Process Lighthouse -ErrorAction SilentlyContinue | Stop-Process -Force
+    # Every account's copy holds the files; the ones that were running are started again at the end.
+    $wasRunning = Stop-AllLighthouse
     Start-Sleep -Seconds 1
     if (Test-Path $target) { Remove-Item (Join-Path $target '*') -Recurse -Force }
     New-Item -ItemType Directory -Force $target | Out-Null
     Copy-Item (Join-Path $publish 'Lighthouse.exe'), (Join-Path $publish '*.dll') $target -Force
     "installed $target ($((Get-ChildItem $target).Count) files)"
 
-    # 3. Two logon tasks. The app runs with your own rights. Its sensor helper is the only part that runs as admin,
-    #    because the PawnIO driver needs it: no window, no files, it answers the app on a pipe only you can open.
-    #    You can run either task (the app starts the helper's when it isn't running) but only admins can change them.
-    $user = "$env:USERDOMAIN\$env:USERNAME"
-    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
-        -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) `
-        -MultipleInstances IgnoreNew -Priority 5
-    foreach ($task in @(
-            @{ Name = 'Sensors'; Arguments = '--sensors'; Level = 'Highest'; Delay = 'PT5S'
-               Description = "Lighthouse's sensor helper: reads CPU, RAM and SSD sensors through the PawnIO driver, which needs admin. No window; the Lighthouse app asks it for readings." },
-            @{ Name = 'Start at logon'; Arguments = $null; Level = 'Limited'; Delay = 'PT10S'
-               Description = 'Starts Lighthouse, the CPU/GPU monitor, at logon, with your own rights.' })) {
-        $action = if ($task.Arguments) { New-ScheduledTaskAction -Execute $exe -Argument $task.Arguments -WorkingDirectory $target }
-                  else { New-ScheduledTaskAction -Execute $exe -WorkingDirectory $target }
-        $trigger = New-ScheduledTaskTrigger -AtLogOn -User $user
-        $trigger.Delay = $task.Delay
-        $principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel $task.Level
-        Register-ScheduledTask -TaskPath '\Lighthouse\' -TaskName $task.Name -Action $action -Trigger $trigger `
-            -Principal $principal -Settings $settings -Force -Description $task.Description | Out-Null
-        "registered task \Lighthouse\$($task.Name) for $user ($($task.Level), $($task.Delay.Substring(2).ToLower()) after logon)"
-    }
+    # 3. This account's two logon tasks (see Register-LighthouseTasks), after moving the old shared ones into
+    #    their own accounts' folders, so installing here leaves another account's tasks alone.
+    Move-SharedLighthouseTasks
+    Register-LighthouseTasks -Account $Account -UserName $UserName -Exe $exe -AdminAccount (-not $StandardAccount)
 
     # 4. The startup entries listed under autostartOff: asks first, then switches them off and saves the list where
     #    only administrators can change it. The running copy keeps exactly that list off.
     $settingsFile = Join-Path $env:LOCALAPPDATA 'Lighthouse\settings.json'
-    if (-not $SkipAutostart -and (Test-Path $settingsFile)) { & (Join-Path $PSScriptRoot 'autostart.ps1') -Disable }
+    if (-not $sameAccount) { "skipped the startup entries and old copies: this runs as $env:USERNAME, not $UserName" }
+    elseif (-not $SkipAutostart -and (Test-Path $settingsFile)) { & (Join-Path $PSScriptRoot 'autostart.ps1') -Disable }
 
     # 5. Earlier versions ran from a per-user folder and unpacked their DLLs into %TEMP%: remove both. Last, and
     #    never fatal: the task already points at Program Files, so a locked leftover only stays on disk.
@@ -88,7 +81,7 @@ try {
     $old = Join-Path $env:LOCALAPPDATA 'Programs\Lighthouse'
     $extracted = Join-Path ([IO.Path]::GetTempPath() | ForEach-Object { (New-Object IO.DirectoryInfo $_).FullName }) '.net\Lighthouse'
     if ($extracted -match '~') { $extracted = Join-Path $env:LOCALAPPDATA 'Temp\.net\Lighthouse' }
-    foreach ($leftover in $old, $extracted) {
+    foreach ($leftover in @(if ($sameAccount) { $old, $extracted })) {
         try {
             if (-not [IO.Directory]::Exists($leftover)) { continue }
             [IO.Directory]::Delete($leftover, $true)
@@ -97,15 +90,15 @@ try {
         catch { "could not remove $leftover ($($_.Exception.Message)); it is no longer used, delete it later" }
     }
 
-    # 6. Start both the way logon will, then show what the app logged.
+    # 6. Start this account's tasks the way logon will (and again any other account's copy that was stopped), then
+    #    show what the app logged.
     $logFile = Join-Path $env:LOCALAPPDATA 'Lighthouse\lighthouse.log'
-    Start-ScheduledTask -TaskPath '\Lighthouse\' -TaskName 'Sensors'
-    Start-ScheduledTask -TaskPath '\Lighthouse\' -TaskName 'Start at logon'
+    foreach ($u in @(@($UserName) + $wasRunning | Sort-Object -Unique)) { Start-LighthouseFor $u }
     Start-Sleep -Seconds 12
     $p = @(Get-Process Lighthouse -ErrorAction SilentlyContinue)
     "running: $($p.Count) Lighthouse processes (the app and its sensor helper): pids $($p.Id -join ', ')"
     '--- lighthouse.log (tail)'
-    if (Test-Path $logFile) { Get-Content $logFile -Tail 8 }
+    if ($sameAccount -and (Test-Path $logFile)) { Get-Content $logFile -Tail 8 }
 }
 catch {
     "FAILED: $_"

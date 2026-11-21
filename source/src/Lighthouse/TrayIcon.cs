@@ -17,8 +17,8 @@ namespace Lighthouse;
 /// <summary>The live icon on the taskbar (lamp over two bars), its tooltip, menu and toasts.</summary>
 public sealed class TrayIcon : IDisposable
 {
-    private const string TaskFolder = @"\Lighthouse\";
-    private const string TaskName = "Start at logon";
+    private static readonly string TaskFolder = LogonTasks.Mine;
+    private const string TaskName = LogonTasks.App;
 
     private readonly MonitorEngine _engine;
     private readonly Dispatcher _dispatcher = Dispatcher.CurrentDispatcher;
@@ -260,11 +260,12 @@ public sealed class TrayIcon : IDisposable
     private void ToggleStartup()
     {
         // The logon tasks (the app and its sensor helper) are changed only with admin rights, so this asks for them:
-        // Windows shows its UAC prompt for this one change.
+        // Windows shows its UAC prompt for this one change. On a standard account that prompt takes an admin's
+        // password and the elevated copy runs as the admin, so it is told whose tasks to switch.
         bool enabled = ScheduledTasks.IsEnabled(TaskFolder, TaskName) == true;
         try
         {
-            using var _ = Process.Start(new ProcessStartInfo(Environment.ProcessPath!, $"--set-startup {(enabled ? "off" : "on")}")
+            using var _ = Process.Start(new ProcessStartInfo(Environment.ProcessPath!, $"--set-startup {(enabled ? "off" : "on")} \"{Environment.UserName}\"")
                 { UseShellExecute = true, Verb = "runas" });
         }
         catch (System.ComponentModel.Win32Exception e) when (e.NativeErrorCode == 1223)

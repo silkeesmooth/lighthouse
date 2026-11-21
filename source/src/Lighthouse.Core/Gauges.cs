@@ -80,8 +80,13 @@ public static class Gauges
     private static string DriverCode(int code) => $"GPU driver, Device Manager code{Nb}{code}";
 
     /// <summary>The short form of why the admin sensors are missing; the flyout's subline carries the whole reason.</summary>
-    private static string SensorsShort(string error) =>
-        error == "the sensor helper isn't running" ? "sensor helper not running" : "sensors unavailable";
+    private static string SensorsShort(string error) => error switch
+    {
+        "the sensor helper isn't running" => "sensor helper not running",
+        Sensors.SensorClient.StandardAccount => "needs an admin account",
+        Sensors.SensorClient.NotInstalled => "sensor helper not installed",
+        _ => "sensors unavailable",
+    };
 
     private static string Ring(double fraction) => $"{Math.Clamp(fraction, 0, 1) * 100:0}%";
     private static string? Deg(double? v) => v is { } x ? $"{x:0}°C" : null;

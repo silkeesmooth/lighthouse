@@ -21,6 +21,21 @@ public static class UserContext
 
     public static bool Elevated { get; } = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
 
+    /// <summary>
+    /// The account is an administrator, elevated or not. A standard account can't run the admin sensor helper: a
+    /// logon task set to "highest" runs it with that account's own rights, which can't reach the PawnIO driver.
+    /// </summary>
+    public static bool AdminAccount { get; } = Elevated || ElevationType() == TokenElevationTypeLimited;
+
+    private const int TokenElevationTypeClass = 18, TokenElevationTypeLimited = 3;
+
+    /// <summary>3 = an admin account running without admin (UAC's split token); 1 = a standard account.</summary>
+    private static int ElevationType()
+    {
+        using var me = WindowsIdentity.GetCurrent();
+        return GetTokenInformation(me.Token, TokenElevationTypeClass, out int type, sizeof(int), out _) ? type : 0;
+    }
+
     /// <summary>Runs <paramref name="work"/> with the user's own rights (directly, when Lighthouse isn't elevated).</summary>
     public static T Run<T>(Func<T> work)
     {
@@ -111,6 +126,9 @@ public static class UserContext
 
     [DllImport("user32.dll")]
     private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint processId);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    private static extern bool GetTokenInformation(IntPtr token, int infoClass, out int info, int length, out int returned);
 
     [DllImport("advapi32.dll", SetLastError = true)]
     private static extern bool OpenProcessToken(IntPtr process, uint access, out SafeAccessTokenHandle token);

@@ -86,4 +86,23 @@ public class ScheduledTaskPathTests
     [InlineData(@"Lighthouse\", @"\Lighthouse")]
     public void Folders_are_passed_the_way_Task_Scheduler_takes_them(string folder, string expected) =>
         Assert.Equal(expected, Lighthouse.Core.Autostart.ScheduledTasks.FolderPath(folder));
+
+    [Fact]
+    public void Each_account_has_its_own_task_folder()
+    {
+        Assert.Equal(@"\Lighthouse\E Maddy\", Lighthouse.Core.Autostart.LogonTasks.Folder("E Maddy"));
+        Assert.Equal(@"\Lighthouse\E Maddy", Lighthouse.Core.Autostart.ScheduledTasks.FolderPath(
+            Lighthouse.Core.Autostart.LogonTasks.Folder("E Maddy")));
+    }
+
+    [Theory]
+    [InlineData("GTN", true)]
+    [InlineData("E Maddy", true)]
+    [InlineData("", false)]
+    [InlineData("  ", false)]
+    [InlineData("..", false)]
+    [InlineData(@"..\Microsoft", false)]
+    [InlineData("a/b", false)]
+    public void Only_a_plain_user_name_picks_a_task_folder(string name, bool ok) =>
+        Assert.Equal(ok, Lighthouse.Core.Autostart.LogonTasks.IsUserName(name));
 }

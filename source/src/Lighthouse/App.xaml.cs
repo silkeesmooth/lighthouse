@@ -117,16 +117,20 @@ public partial class App : Application
             return;
         }
 
-        // --set-startup on|off: switch both logon tasks (the app and its sensor helper). Needs admin; the tray menu's
-        // "Start with Windows" starts this through a UAC prompt.
+        // --set-startup on|off [user name]: switch both logon tasks (the app and its sensor helper) of that account,
+        // by default this one. Needs admin; the tray menu's "Start with Windows" starts this through a UAC prompt and
+        // names its own account, because on a standard account the elevated copy runs as whoever approved the prompt.
         if (e.Args is ["--set-startup", ("on" or "off") and var state, ..])
         {
+            string user = e.Args.Length > 2 ? e.Args[2] : Environment.UserName;
             RunAndExit(() =>
             {
-                foreach (string task in new[] { "Start at logon", "Sensors" })
-                    if (Core.Autostart.ScheduledTasks.IsEnabled(@"\Lighthouse\", task) is not null)
-                        Core.Autostart.ScheduledTasks.SetEnabled(@"\Lighthouse\", task, state == "on");
-                Log.Write($"start with Windows: {state}");
+                if (!Core.Autostart.LogonTasks.IsUserName(user)) throw new ArgumentException($"not a user name: {user}");
+                string folder = Core.Autostart.LogonTasks.Folder(user);
+                foreach (string task in new[] { Core.Autostart.LogonTasks.App, Core.Autostart.LogonTasks.Sensors })
+                    if (Core.Autostart.ScheduledTasks.IsEnabled(folder, task) is not null)
+                        Core.Autostart.ScheduledTasks.SetEnabled(folder, task, state == "on");
+                Log.Write($"start with Windows: {state} for {user}");
             });
             return;
         }
